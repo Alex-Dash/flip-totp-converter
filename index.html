@@ -6,16 +6,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flipper Zero TOTP converter</title>
     <script src="./js/app.js"></script>
+    <link rel="stylesheet" href="./css/master.css">
 </head>
 
 <body>
-    <input type="file" id="file-selector" multiple>
-    <script>
-        const fileSelector = document.getElementById('file-selector');
-        fileSelector.addEventListener('change', (event) => {
-            parseFileList(event.target.files);
-        });
-    </script>
+
+    <div id="screen1" class="screen">
+        <div class="activity-box">
+            <div class="file-row">
+                <div><span class="drop-label">Original Flipper totp.conf</span></div>
+                <div class="drag-screens" id="z0">
+                    <div id="drop-zone0" class="drop-zone" ondrop="readTotpFile(event);"
+                        ondragleave="toggleFileOver(event, 0)" ondragover="allowDrop(event)" ondragenter="toggleFileOver(event, 1);">
+                        <!-- Drop zone -->
+                    </div>
+                    <div id="drag00" class="drag-screen">
+                        <!-- File picker -->
+                        <div><span> DRAG AND DROP</span></div>
+                        <div><span>OR</span></div>
+                        <div class="button btn-big" onclick="fileSelector('totp')" ondrop="readTotpFile(event);"
+                        ondragleave="toggleFileOver(event, 0, 0)" ondragover="allowDrop(event)" ondragenter="toggleFileOver(event, 1,0);">
+                            <span>SELECT FILE</span>
+                        </div>
+                    </div>
+                    <div id="drag01" class="drag-screen">
+                        <div class="pad"><span>DROP TO ANALYZE FILES</span></div>
+                    </div>
+                    <div id="drag02" class="drag-screen">
+                        <div class="pad"><span id="loadtext0">DROP TO ANALYZE FILES</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="file-row">
+                <div><span class="drop-label">Authenticator exports</span></div>
+                <div class="drag-screens" id="z1">
+                    <div id="drop-zone1" class="drop-zone" ondrop="dropfiles(event);"
+                        ondragleave="toggleFileOver(event, 0)" ondragover="allowDrop(event)" ondragenter="toggleFileOver(event, 1);">
+                        <!-- Drop zone -->
+                    </div>
+                    <div id="drag10" class="drag-screen">
+                        <!-- File picker -->
+                        <div><span> DRAG AND DROP</span></div>
+                        <div><span>OR</span></div>
+                        <div class="button btn-big" onclick="fileSelector('exports')" ondrop="dropfiles(event);"
+                        ondragleave="toggleFileOver(event, 0, 1)" ondragover="allowDrop(event)" ondragenter="toggleFileOver(event, 1, 1);">
+                            <span>SELECT FILES</span>
+                        </div>
+                    </div>
+                    <div id="drag11" class="drag-screen">
+                        <div class="pad"><span>DROP TO ANALYZE FILES</span></div>
+                    </div>
+                    <div id="drag12" class="drag-screen">
+                        <div class="pad"><span id="loadtext0">DROP TO ANALYZE FILES</span></div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="ab-scan"></div>
+            <div class="ab-grid"></div>
+            <div class="ab-bg"></div>
+        </div>
+    </div>
+
 </body>
 
 </html>

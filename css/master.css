@@ -1,0 +1,194 @@
+@font-face {
+    font-family: Haxcorp;
+    src: url(../fonts/haxrcorp-4089.ttf);
+}
+
+@font-face {
+    font-family: Born2bSportyV2;
+    src: url(../fonts/Born2bSportyV2.ttf);
+}
+
+@font-face {
+    font-family: ProggySquare;
+    src: url(../fonts/ProggySquare.ttf);
+}
+
+@font-face {
+    font-family: ShareTech_Regular;
+    src: url(../fonts/ShareTech-Regular.ttf);
+}
+
+@font-face {
+    font-family: ShareTech_Mono;
+    src: url(../fonts/ShareTechMono-Regular.ttf);
+}
+
+:root{
+    --tc-r: 254;
+    --tc-g: 138;
+    --tc-b: 44;
+    --grid-alpha: 0.1;
+    --scan-alpha: 0.15;
+    --bg-a:#080300;
+    --bg-b:#200e00;
+    --btn-main-bg:#491d00;
+    --btn-hover-text-color: #491d00;
+
+}
+
+body {
+    background: rgb(0 0 0);
+    color: rgb(251 136 43);
+    font-family: Haxcorp;
+    font-size: 3em;
+}
+
+.screen{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.ab-bg{
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    z-index: -1000;
+    background: linear-gradient(to bottom, var(--bg-a) 0%, var(--bg-b) 100%);
+}
+
+.ab-grid{
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    z-index: -900;
+    background-size: 25px 25px;
+    background-position: center;
+    background-image:
+    linear-gradient(to right, rgba(var(--tc-r), var(--tc-g), var(--tc-b), var(--grid-alpha)) 2px, transparent 2px),
+    linear-gradient(to bottom, rgba(var(--tc-r), var(--tc-g), var(--tc-b), var(--grid-alpha)) 2px, transparent 2px);
+}
+
+.ab-scan{
+    width: 100%;
+    height: 200vh;
+    background-position-y: 0em;
+    position: absolute;
+    top: 0;
+    z-index: -800;
+    animation: scan-anim 8s linear 0s infinite normal forwards;;
+    background-image: linear-gradient(to top, rgba(var(--tc-r), var(--tc-g), var(--tc-b), var(--scan-alpha)) 0px, transparent 5em);
+}
+
+.activity-box{
+    position: relative;
+    width: 80%;
+    height: 15em;
+    border: solid;
+    border-radius: 0.2em;
+    overflow: hidden;
+}
+
+.drop-zone{
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    z-index: 500;
+}
+
+.drag-screen:hover{
+    background: rgba(255, 146, 95, 0.205);
+}
+
+.drag-screens{
+    position: relative;
+    overflow: hidden;
+    width: 80%;
+}
+
+.drag-screen{
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    padding: 0.3em;
+    flex-wrap: wrap;
+    align-content: center;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255, 0, 0, 0.098);
+    border-left: dotted;
+    border-right: dotted;
+    border-top: solid;
+    border-bottom: solid;
+    border-radius: 0.2em;
+    transition: background 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.drag-screen>div{
+    margin-inline: 0.15em;
+}
+
+.pad{
+    padding: 0.3em;
+    padding-top: 0.45em;
+    padding-bottom: 0.45em;
+}
+
+.drop-label{
+    font-size: 1.5em;
+}
+
+.file-row{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-content: center;
+    flex-wrap: wrap;
+    padding-top: 1em;
+}
+
+.file-row>div{
+    padding-inline: 1em;
+    padding-top: 0.4em;
+}
+
+/*///////////// Buttons //////////////*/
+.button{
+    border: solid;
+    border-radius: 0.15em;
+    padding: 0.2em;
+    cursor: pointer;
+    position: relative;
+    z-index: 1000;
+    background: var(--btn-main-bg);
+    transition: background 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.button:hover{
+    background: rgb(var(--tc-r), var(--tc-g), var(--tc-b));
+    color: var(--btn-hover-text-color);
+}
+
+.button>span{
+    pointer-events: none;
+}
+
+.btn-big{
+    font-family: Born2bSportyV2;
+}
+
+#drag01, #drag02, #drag11, #drag12{
+    display: none;
+}
+/*///////////// Animations //////////////*/
+@keyframes scan-anim {
+    from {
+        background-position-y: 0em;
+    }
+    to {
+        background-position-y: 30em;
+    }
+}
