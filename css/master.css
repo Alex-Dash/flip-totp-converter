@@ -75,12 +75,6 @@ body {
     width: 80%;
 }
 
-.screen{
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
 .ab-bg{
     width: 100%;
     height: 100%;
@@ -105,7 +99,7 @@ body {
 
 .ab-scan{
     width: 100%;
-    height: 200vh;
+    height: 140vh;
     background-position-y: 0em;
     position: absolute;
     top: 0;
@@ -114,8 +108,33 @@ body {
     background-image: linear-gradient(to top, rgba(var(--tc-r), var(--tc-g), var(--tc-b), var(--scan-alpha)) 0px, transparent 5em);
 }
 
+
+.screen{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 0;
+    opacity: 1;
+    transition: all 0.4s cubic-bezier(0.075, 0.82, 0.165, 1);
+}
+
+.screen-disabled{
+    z-index: -100;
+    cursor: default;
+    pointer-events: none;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.075, 0.82, 0.165, 1);
+}
+
+
 .activity-box{
     position: relative;
+    width: 100%;
     height: 15em;
     border: solid;
     border-radius: 0.2em;
@@ -251,6 +270,10 @@ body {
     flex-direction: column-reverse;
 }
 
+.log-msg{
+    width: 97%;
+}
+
 .log-content>.log-msg>p{
     margin: 0;
     padding: 0;
@@ -273,6 +296,7 @@ body {
     align-items: center;
     flex-direction: row;
     flex-wrap: wrap;
+    justify-content: center;
 }
 
 .button:hover{
@@ -304,6 +328,26 @@ body {
     flex-wrap: nowrap;
 }
 
+.s1-ready-btn{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-content: center;
+    flex-direction: column;
+    margin-top: 1.5em;
+}
+
+.s1-ready-btn>.button{
+    transition: all 0.5s;
+}
+
+.btn-hide {
+    transition: all 0.5s;
+    pointer-events: none;
+    cursor:default;
+    opacity: 0;
+}
+
 /*///////////// Icons //////////////*/
 
 .icon {
@@ -332,6 +376,6 @@ body {
         background-position-y: 0em;
     }
     to {
-        background-position-y: 30em;
+        background-position-y: 23em;
     }
 }

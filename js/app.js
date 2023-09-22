@@ -2,6 +2,7 @@ const urlReg = new RegExp(`otpauth:\\/\\/.*?\\/.*?$`, "gm")
 const urlMainReg = new RegExp(`\\/\\/(.*?)\\/(.*?)((:(.*))|$)`)
 const urlParamsReg = new RegExp(`([^&]+?)=([^&]+)`, "g")
 const totpconfigReg = new RegExp(`(.+?):(.+)`, "g")
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 const ALGOMAP = {
     to:["SHA1", "SHA256", "SHA512", "STEAM"],
     from:{
@@ -15,11 +16,11 @@ const ALGOMAP = {
 // defaults
 var DEFAULTS = {
     Filetype: "Flipper TOTP plugin config file",
-    Version:undefined,
-    CryptoVersion:undefined,
-    CryptoKeySlot:undefined,
-    Salt:undefined,
-    Crypto:undefined,
+    Version:null,
+    CryptoVersion:null,
+    CryptoKeySlot:null,
+    Salt:null,
+    Crypto:null,
     Timezone:0,
     PinIsSet:false,
     NotificationMethod:3,
@@ -29,11 +30,11 @@ var DEFAULTS = {
 }
 var HEADER = {
     Filetype: "Flipper TOTP plugin config file",
-    Version:undefined,
-    CryptoVersion:undefined,
-    CryptoKeySlot:undefined,
-    Salt:undefined,
-    Crypto:undefined,
+    Version:null,
+    CryptoVersion:null,
+    CryptoKeySlot:null,
+    Salt:null,
+    Crypto:null,
     Timezone:0,
     PinIsSet:false,
     NotificationMethod:3,
@@ -43,8 +44,8 @@ var HEADER = {
 }
 
 var FILE_STATE = {
-    exports:{},
-    totp:{}
+    exports:[],
+    totp:[]
 }
 
 function shorten(string, start, end) {
@@ -55,7 +56,7 @@ function shorten(string, start, end) {
 }
 
 async function parseFileList(list) {
-    FILE_STATE.exports = {}
+    recordFileState("exports")
     progress = document.getElementById(`drag${zone}2`)
     if(list.length==0){
         // should never happen in practice, but who knows
@@ -64,8 +65,6 @@ async function parseFileList(list) {
         progress.style.display = 'none'
         return
     }
-    AUTH_FILES = list
-    console.log(list)
     document.getElementById(`drag${zone}0`).style.display = 'none'
     document.getElementById(`drag${zone}1`).style.display = 'none'
     progress = document.getElementById(`drag${zone}2`)
@@ -82,6 +81,8 @@ async function parseFileList(list) {
 
 function log(msg, type, context) {
     console.log(msg)
+    document.getElementById("log-target").innerHTML = `<div class="log-msg"><p>[${type===undefined?"INFO":type.toUpperCase()}] ${msg}</p></div>
+${document.getElementById("log-target").innerHTML}`
 }
 
 function loaderError(message, zone) {
@@ -95,7 +96,7 @@ function loaderError(message, zone) {
 async function readFileAsync(file, context) {
     const reader = new FileReader();
     reader.addEventListener('load', (event) => {
-        extractDataRaw(event?.target?.result).then(
+        extractDataRaw(event?.target?.result, file).then(
             r=>{
                 if(r.error){
                     log(`FILE: ${file.name}: `+r.error, "error", file.name)
@@ -128,17 +129,51 @@ function getFileType(content) {
     return "invalid"
 }
 
-async function extractDataRaw(content) {
+async function recordFileState(type, file_ref) {
+    p = await new Promise((rs,rj)=>{
+        if(type===undefined){
+            // clear the state
+            FILE_STATE = {
+                exports:[],
+                totp:[]
+            }
+            rs(false)
+            return
+        } 
+        if(Object.keys(FILE_STATE).includes(type)){
+            if(file_ref===undefined){
+                FILE_STATE[type] = []
+                rs(false)
+                return
+            }
+            FILE_STATE[type].push(file_ref)
+            rs(true)
+            return
+        } else {
+            log(`Could not determine file group for type ${type}; File: ${file_ref?.name}`)
+            rs(false)
+            return
+        }
+    })
+    s1ButtonCheck()
+    return p
+}
+
+async function extractDataRaw(content, file_ref) {
     ftype = getFileType(content)
     
     switch (ftype) {
         case "json":
             if(JSONcontents?.db?.version === undefined){
+                log(`Extracted encrypted JSON data from "${file_ref.name}"`)
+                recordFileState("exports", file_ref)
                 return {
                     isEncrypted: true,
                     data: JSONcontents
                 }
             }
+            log(`Extracted plain JSON data from "${file_ref.name}"`)
+            recordFileState("exports", file_ref)
             return {
                 isEncrypted: false,
                 data: JSONcontents?.db?.entries || []
@@ -193,6 +228,8 @@ async function extractDataRaw(content) {
                 })
 
             }
+            log(`Extracted url data from "${file_ref.name}"`)
+            recordFileState("exports", file_ref)
             return {isEncrypted: false, data:entries}
         case "html":
             return {
@@ -230,6 +267,8 @@ TokenAutomationFeatures: ${entry.flipper_automation!==undefined?entry.flipper_au
 
 async function readTotpConfigHeader(file) {
     const reader = new FileReader();
+    HEADER = JSON.parse(JSON.stringify(DEFAULTS))
+    recordFileState("totp")
     reader.addEventListener('load', (event) => {
         document.getElementById(`drag${zone}0`).style.display = 'none'
         document.getElementById(`drag${zone}1`).style.display = 'none'
@@ -251,10 +290,13 @@ async function readTotpConfigHeader(file) {
             }
             HEADER[k] = v
         }
-        if(HEADER.Crypto === undefined || HEADER.Salt === undefined){
-            missing_headers = Object.keys(HEADER).reduce((a,e)=>{return a+(HEADER[e] === undefined?` ${e}`:"")},"").trim().split(" ").join(', ')
-            log(`Missing Crypro or Salt headers. Missing: ${missing_headers}`, "error")
+        if(HEADER.Crypto === undefined || HEADER.Salt === undefined || HEADER.Crypto === null || HEADER.Salt === null){
+            missing_headers = Object.keys(HEADER).reduce((a,e)=>{return a+((HEADER[e] === undefined || HEADER[e] === null)?` ${e}`:"")},"").trim().split(" ").join(', ')
+            log(`Missing Crypto or Salt headers. Missing: ${missing_headers}`, "error")
             progress.innerHTML = `<div class="pad"><span id="loadtext0">ERROR PARSING ${shorten(file.name, 12, 6)}</span></div>`
+        } else{
+            log(`Loaded and parsed "${file.name}" file as totp.conf`)
+            recordFileState("totp", file)
         }
 
     });
@@ -379,4 +421,39 @@ async function dropfiles(event) {
 async function toggleLogs() {
     document.getElementsByClassName("log-dropdown")[0].classList.toggle("log-hide")
     document.getElementById("log_icon").classList.toggle("icon-flip")
+}
+
+// Show screen 1 continue button only when at least one file for each file group was loaded
+async function s1ButtonCheck() {
+    file_groups = Object.keys(FILE_STATE)
+    if(file_groups.reduce((a,e)=>{return a+(FILE_STATE[e].length>0?1:0)},0)===file_groups.length){
+        // show screen 1 continue button
+        document.getElementById("s1_r").classList.remove("btn-hide")
+    } else {
+        // hide screen 1 continue button
+        document.getElementById("s1_r").classList.add("btn-hide")
+    }
+}
+
+async function s1ButtonContinue() {
+    transitionToScreen(2)
+}
+
+async function transitionToScreen(screen_id) {
+    screens = [1,2,3]
+    for (const sc_id of screens) {
+        s = document.getElementById(`screen${sc_id}`)
+        if(!s){
+            continue
+        }
+        s.classList.add("screen-disabled")
+    }
+    await sleep(300)
+    s = document.getElementById(`screen${screen_id}`)
+    if(!s){
+        // fallback
+        s = document.getElementById(`screen1`)
+    }
+    s.classList.remove("screen-disabled")
+
 }

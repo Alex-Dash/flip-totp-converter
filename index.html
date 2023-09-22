@@ -12,8 +12,8 @@
 <body>
 
     <div class="container">
-        <div id="screen1" class="screen">
-            <div class="activity-box">
+        <div class="activity-box">
+            <div id="screen1" class="screen">
                 <div class="file-row">
                     <div><span class="drop-label">Original Flipper totp.conf</span></div>
                     <div class="drag-screens" id="z0">
@@ -64,11 +64,25 @@
                     </div>
                 </div>
     
+                <div class="s1-ready-btn">
+                    <div class="button btn-big btn-hide" style="width: 7em;" onclick="s1ButtonContinue()" id="s1_r">
+                        <div>
+                            <span>CONTINUE</span>
+                        </div>
+                    </div>
+                </div>
     
-                <div class="ab-scan"></div>
-                <div class="ab-grid"></div>
-                <div class="ab-bg"></div>
             </div>
+            <div class="screen screen-disabled" id="screen2">
+                <span>indev 2</span>
+            </div>
+            <div class="screen screen-disabled" id="screen3">
+                <span>indev 3</span>
+            </div>
+            
+            <div class="ab-scan"></div>
+            <div class="ab-grid"></div>
+            <div class="ab-bg"></div>
         </div>
         <div class="logarea">
             <div class="log-upper">
