@@ -231,11 +231,17 @@ TokenAutomationFeatures: ${entry.flipper_automation!==undefined?entry.flipper_au
 async function readTotpConfigHeader(file) {
     const reader = new FileReader();
     reader.addEventListener('load', (event) => {
+        document.getElementById(`drag${zone}0`).style.display = 'none'
+        document.getElementById(`drag${zone}1`).style.display = 'none'
+        progress =  document.getElementById(`drag${zone}2`)
+        progress.innerHTML = `<div class="pad"><span id="loadtext0">LOADED ${shorten(file.name, 12, 6)}</span></div>`
+        progress.style.display = 'flex'
+
         content = event?.target?.result
         expected_keys = Object.keys(HEADER)
         for (const l of content.split(new RegExp(`\n`))) {
-            groups = l.match(totpconfigReg)
-            if(groups===null || groups?.length<2){
+            groups = [...l.matchAll(totpconfigReg)][0]
+            if(groups===null || groups==undefined || groups?.length<2){
                 continue
             }
             k = groups[1].trim()
@@ -245,7 +251,12 @@ async function readTotpConfigHeader(file) {
             }
             HEADER[k] = v
         }
-        console.log(HEADER)
+        if(HEADER.Crypto === undefined || HEADER.Salt === undefined){
+            missing_headers = Object.keys(HEADER).reduce((a,e)=>{return a+(HEADER[e] === undefined?` ${e}`:"")},"").trim().split(" ").join(', ')
+            log(`Missing Crypro or Salt headers. Missing: ${missing_headers}`, "error")
+            progress.innerHTML = `<div class="pad"><span id="loadtext0">ERROR PARSING ${shorten(file.name, 12, 6)}</span></div>`
+        }
+
     });
     reader.readAsText(file);
 }
@@ -294,7 +305,6 @@ async function toggleFileOver(event, state, context) {
         // rare case where drop hits the button
         zone = context
     }
-    console.log(zone)
     if(state){
         document.getElementById(`drag${zone}0`).style.display = 'none'
         document.getElementById(`drag${zone}1`).style.display = 'flex'
@@ -364,4 +374,9 @@ async function dropfiles(event) {
         // Use DataTransfer interface to access the file(s)
         parseFileList([...event.dataTransfer.files])
       }
+}
+
+async function toggleLogs() {
+    document.getElementsByClassName("log-dropdown")[0].classList.toggle("log-hide")
+    document.getElementById("log_icon").classList.toggle("icon-flip")
 }

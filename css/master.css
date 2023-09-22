@@ -33,7 +33,29 @@
     --bg-b:#200e00;
     --btn-main-bg:#491d00;
     --btn-hover-text-color: #491d00;
+    scroll-behavior: smooth;
+}
 
+/* width */
+::-webkit-scrollbar {
+    width: 0.3em;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    background: rgba(var(--tc-r), var(--tc-g), var(--tc-b), 0.4 );
+    border-radius: 1em;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: rgba(var(--tc-r), var(--tc-g), var(--tc-b), 1 );
+    border-radius: 1em;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 
 body {
@@ -41,6 +63,16 @@ body {
     color: rgb(251 136 43);
     font-family: Haxcorp;
     font-size: 3em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.container{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 80%;
 }
 
 .screen{
@@ -84,7 +116,6 @@ body {
 
 .activity-box{
     position: relative;
-    width: 80%;
     height: 15em;
     border: solid;
     border-radius: 0.2em;
@@ -153,6 +184,77 @@ body {
 .file-row>div{
     padding-inline: 1em;
     padding-top: 0.4em;
+    padding-right: 1.5em;
+}
+
+#drag01, #drag02, #drag11, #drag12{
+    display: none;
+}
+
+/* ////////////// LOGS ////////////// */
+
+.logarea{
+    position: relative;
+    width: 100%;
+    padding-top: 0.2em;
+}
+
+.log-upper{
+    display: flex;
+    align-content: center;
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: nowrap;
+}
+
+.log-status{
+    display: flex;
+    align-items: center;
+    align-content: center;
+    flex-direction: row;
+    margin-left: 0.3em;
+    width: 100%;
+    height: 100%;
+    padding: 0.2em;
+    background: var(--btn-main-bg);
+}
+
+.log-dropdown{
+    font-family: ShareTech_Regular;
+    font-size: 0.3em;
+    border: solid rgba(var(--tc-r),var(--tc-g),var(--tc-b),0.3);
+    border-radius: 0.6em;
+    width: 98.6%;
+    height: 10.3em;
+    padding-left: 0.7em;
+    transition: all 0.3s ease-in-out;
+    position: relative;
+    margin-top:0.5em
+}
+
+.log-hide{
+    height: 0;
+    border: none;
+    overflow: hidden;
+    transition: all 0.3s ease-in-out;
+}
+
+.log-content{
+    width: 100%;
+    font-family: ShareTech_Mono;
+    position: absolute;
+    bottom: 0;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+.log-content>.log-msg>p{
+    margin: 0;
+    padding: 0;
+    margin-bottom: 0.3em;
 }
 
 /*///////////// Buttons //////////////*/
@@ -160,16 +262,30 @@ body {
     border: solid;
     border-radius: 0.15em;
     padding: 0.2em;
+    padding-inline: 0.5em;
     cursor: pointer;
     position: relative;
     z-index: 1000;
     background: var(--btn-main-bg);
     transition: background 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    display: flex;
+    align-content: center;
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: wrap;
 }
 
 .button:hover{
     background: rgb(var(--tc-r), var(--tc-g), var(--tc-b));
     color: var(--btn-hover-text-color);
+}
+
+.button:hover>.icon-normal{
+    filter: brightness(0.31) contrast(1.15);
+}
+
+.button:hover>.icon-invert{
+    filter: none;
 }
 
 .button>span{
@@ -180,9 +296,36 @@ body {
     font-family: Born2bSportyV2;
 }
 
-#drag01, #drag02, #drag11, #drag12{
-    display: none;
+.btn-mid{
+    border-width: 0.06em;
 }
+
+.btn-nowrap{
+    flex-wrap: nowrap;
+}
+
+/*///////////// Icons //////////////*/
+
+.icon {
+    display: flex;
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    margin-right: 0.3em;
+}
+
+.icon>img{
+    width: 0.8em;
+    height: 0.8em;
+}
+
+.icon-invert{
+    filter: brightness(0.31) contrast(1.15);
+}
+
+.icon-flip{
+    transform: rotate(180deg);
+}
+
+
 /*///////////// Animations //////////////*/
 @keyframes scan-anim {
     from {
