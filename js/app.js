@@ -176,7 +176,7 @@ const LOCALIZATION = {
         "AutomationMethod": "Automation Method",
         "Font": "Font",
         "AutomationKbLayout": "Automation Keyboard Layout",
-        "TokenName": "Automation Method",
+        "TokenName": "Token Name",
         "TokenSecret": "Secret",
         "TokenAlgo": "Algorithm",
         "TokenDigits": "Digits",
@@ -269,8 +269,10 @@ async function readFileAsync(file, context) {
                     loaderError(r.error, 1)
                     return
                 }
-                TOKEN_ENTRIES.push(r)
-                flipperizeEntries(r).then(x=>console.log(x.data))
+                flipperizeEntries(r).then(x=>{
+                    TOKEN_ENTRIES.push(x?.data || [])
+                    console.log(x)
+                })
             }
             )
     });
@@ -328,7 +330,6 @@ async function recordFileState(type, file_ref) {
 
 async function extractDataRaw(content, file_ref) {
     ftype = getFileType(content)
-    
     switch (ftype) {
         case "json":
             if(JSONcontents?.db?.version === undefined){
@@ -410,26 +411,37 @@ async function extractDataRaw(content, file_ref) {
     }
 }
 
-async function flipperizeEntries(data) {
-    if(data.isEncrypted){
+async function flipperizeEntries(inp) {
+    if(inp.isEncrypted){
         return {
             error:"Export is encrypted. Decryption is not yet implemented"
         }
     }
     acc = ""
-    for (const entry of data.data) {
+    data = []
+    for (const entry of inp.data) {
+        
+        n = entry?.issuer!==""?entry?.issuer+": "+entry?.name:entry?.name
+        s = entry?.info?.secret
+        a = entry?.type?.toLowerCase()!=="steam"?ALGOMAP.from[entry?.info?.algo?.toUpperCase()]:ALGOMAP.from["STEAM"]
+        dig = entry?.info?.digits
+        dur = entry?.info?.period
+        auto = entry?.flipper_automation!==undefined?entry?.flipper_automation:0
+        obj = {
+            TokenName:n,
+            TokenSecret:s,
+            TokenAlgo:a,
+            TokenDigits:dig,
+            TokenDuration:dur,
+            TokenAutomationFeatures:auto
+        }
+        data.push(obj)
         if (entry.error) {
             continue
         }
-        acc += `
-TokenName: ${entry.issuer!==""?entry.issuer+": "+entry.name:entry.name}
-TokenSecret: ${entry.info.secret}
-TokenAlgo: ${entry.type.toLowerCase()!=="steam"?ALGOMAP.from[entry.info.algo.toUpperCase()]:ALGOMAP.from["STEAM"]}
-TokenDigits: ${entry.info.digits}
-TokenDuration: ${entry.info.period}
-TokenAutomationFeatures: ${entry.flipper_automation!==undefined?entry.flipper_automation:0}`
+        acc += `${Object.keys(obj).map(e=>{return `${e}: ${obj[e]}`}).join("\n")}`
     }
-    return {data:acc}
+    return {plain:acc, data:data}
 }
 
 async function readTotpConfigHeader(file) {
@@ -605,7 +617,8 @@ async function s1ButtonCheck() {
 async function s1ButtonContinue() {
     transitionToScreen(2);
     updateHeaderUI(HEADER);
-    unlockParams(false)
+    unlockParams(false);
+    updateTokensUI(TOKEN_ENTRIES);
 }
 
 async function transitionToScreen(screen_id) {
@@ -674,12 +687,77 @@ function updateHeaderUI(h) {
     setDropdowns()
 }
 
+function updateTokensUI(tokens) {
+    tokens_flat = tokens.flat()
+    targ = document.getElementById("ui_tokens")
+    targ.innerHTML = ``
+    acc = `<div class="section-label"><span>Your tokens</span></div>`
+    for (const i in tokens_flat) {
+        acc+=`${genTokenEntry(tokens_flat[i], i)}`
+    }
+    targ.innerHTML = acc
+    // update custom selects
+    setDropdowns()
+}
+
+function genTokenEntry(data, token_id) {
+    // @TODO: simplify this mess
+    return `<div class="bounding-box">
+    <div class="entries">
+        <div class="entry">
+            <div class="entry-label"><span>${LOCALIZATION.totpconf.TokenName}</span></div>
+            <div class="entry-value entry-long">
+            ${generateInput(`${token_id}_TokenName`, TYPEINFO.totpconfig.entry.TokenName.type, TYPEINFO.totpconfig.entry.TokenName.protected, data.TokenName, TYPEINFO.totpconfig.entry.TokenName.default)}
+            </div>
+        </div>
+        <div class="entry">
+            <div class="entry-label"><span>${LOCALIZATION.totpconf.TokenSecret}</span></div>
+            <div class="entry-value entry-long">
+            ${generateInput(`${token_id}_TokenSecret`, TYPEINFO.totpconfig.entry.TokenSecret.type, TYPEINFO.totpconfig.entry.TokenSecret.protected, data.TokenSecret, TYPEINFO.totpconfig.entry.TokenSecret.default)}
+            </div>
+        </div>
+        <div class="entry entry-cramp">
+            <div class="entry-label"><span>${LOCALIZATION.totpconf.TokenAlgo}</span></div>
+            <div class="entry-value entry-short">
+            ${generateInput(`${token_id}_TokenAlgo`, TYPEINFO.totpconfig.entry.TokenAlgo.type, TYPEINFO.totpconfig.entry.TokenAlgo.protected, data.TokenAlgo, TYPEINFO.totpconfig.entry.TokenAlgo.default, TYPEINFO.totpconfig.entry.TokenAlgo.set)}
+            </div>
+        </div>
+        <div class="entry entry-cramp">
+            <div class="entry-label"><span>${LOCALIZATION.totpconf.TokenDigits}</span></div>
+            <div class="entry-value entry-short">
+            ${generateInput(`${token_id}_TokenDigits`, TYPEINFO.totpconfig.entry.TokenDigits.type, TYPEINFO.totpconfig.entry.TokenDigits.protected, data.TokenDigits, TYPEINFO.totpconfig.entry.TokenDigits.default, TYPEINFO.totpconfig.entry.TokenDigits.set)}
+            </div>
+        </div>
+        <div class="entry entry-cramp">
+            <div class="entry-label"><span>${LOCALIZATION.totpconf.TokenDuration}</span></div>
+            <div class="entry-value entry-short">
+            ${generateInput(`${token_id}_TokenDuration`, TYPEINFO.totpconfig.entry.TokenDuration.type, TYPEINFO.totpconfig.entry.TokenDuration.protected, data.TokenDuration, TYPEINFO.totpconfig.entry.TokenDuration.default, TYPEINFO.totpconfig.entry.TokenDuration.set)}
+            </div>
+        </div>
+        <div class="entry entry-cramp">
+            <div class="entry-label"><span>${LOCALIZATION.totpconf.TokenAutomationFeatures}</span></div>
+            <div class="entry-value">
+            ${generateInput(`${token_id}_TokenAutomationFeatures`, TYPEINFO.totpconfig.entry.TokenAutomationFeatures.type, TYPEINFO.totpconfig.entry.TokenAutomationFeatures.protected, (
+                TYPEINFO.totpconfig.entry.TokenAutomationFeatures.set.map(x=>x.value).indexOf(Number(data.TokenAutomationFeatures))
+            ), TYPEINFO.totpconfig.entry.TokenAutomationFeatures.default, TYPEINFO.totpconfig.entry.TokenAutomationFeatures.set)}
+                </div>
+        </div>
+    </div>
+</div>`
+
+}
+
 // Custom dropdowns setup
 /* Look for any elements with the class "custom-select": */
 function setDropdowns() {
     x = document.getElementsByClassName("custom-select");
     l = x?.length || 0;
     for (i = 0; i < l; i++) {
+
+        if (x[i].getElementsByClassName("select-selected").length!==0) {
+            // custom select exists, ignore
+            continue
+        }
         setupCustomSelect(x[i].getElementsByTagName("select")[0], x)
     }
 }
