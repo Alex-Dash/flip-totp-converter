@@ -5,15 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flipper Zero TOTP converter</title>
-    <script src="./js/app.js"></script>
     <link rel="stylesheet" href="./css/master.css">
 </head>
 
 <body>
 
+    <div id="alert_target">
+        
+    </div>
     <div class="container">
         <div class="activity-box">
-            <div id="screen1" class="screen">
+            <div id="screen1" class="screen screen-disabled">
                 <div class="file-row">
                     <div><span class="drop-label">Original Flipper totp.conf</span></div>
                     <div class="drag-screens" id="z0">
@@ -21,7 +23,7 @@
                             ondragleave="toggleFileOver(event, 0)" ondragover="allowDrop(event)" ondragenter="toggleFileOver(event, 1);">
                             <!-- Drop zone -->
                         </div>
-                        <div id="drag00" class="drag-screen">
+                        <div id="drag00" class="drag-screen bounding-box">
                             <!-- File picker -->
                             <div><span> DRAG AND DROP</span></div>
                             <div><span>OR</span></div>
@@ -30,10 +32,10 @@
                                 <span>SELECT FILE</span>
                             </div>
                         </div>
-                        <div id="drag01" class="drag-screen">
+                        <div id="drag01" class="drag-screen bounding-box">
                             <div class="pad"><span>DROP TO ANALYZE FILES</span></div>
                         </div>
-                        <div id="drag02" class="drag-screen">
+                        <div id="drag02" class="drag-screen bounding-box">
                             <div class="pad"><span id="loadtext0">DROP TO ANALYZE FILES</span></div>
                         </div>
                     </div>
@@ -46,7 +48,7 @@
                             ondragleave="toggleFileOver(event, 0)" ondragover="allowDrop(event)" ondragenter="toggleFileOver(event, 1);">
                             <!-- Drop zone -->
                         </div>
-                        <div id="drag10" class="drag-screen">
+                        <div id="drag10" class="drag-screen bounding-box">
                             <!-- File picker -->
                             <div><span> DRAG AND DROP</span></div>
                             <div><span>OR</span></div>
@@ -55,10 +57,10 @@
                                 <span>SELECT FILES</span>
                             </div>
                         </div>
-                        <div id="drag11" class="drag-screen">
+                        <div id="drag11" class="drag-screen bounding-box">
                             <div class="pad"><span>DROP TO ANALYZE FILES</span></div>
                         </div>
-                        <div id="drag12" class="drag-screen">
+                        <div id="drag12" class="drag-screen bounding-box">
                             <div class="pad"><span id="loadtext0">DROP TO ANALYZE FILES</span></div>
                         </div>
                     </div>
@@ -73,8 +75,18 @@
                 </div>
     
             </div>
-            <div class="screen screen-disabled" id="screen2">
-                <span>indev 2</span>
+            <div class="screen" id="screen2">
+                <div class="header-info" id="ui_header"></div>
+                <br>
+                <div class="button btn-danger" id="params_toggle" onclick="unlockParams()"><div class="icon"><img src="./icons/unlock.svg"></div><span>UNLOCK SYSTEM PARAMETERS</span></div>
+                <div class="token-info" id="ui_tokens">
+                    <div class="section-label"><span>Your tokens</span></div>
+                    <div class="bounding-box">
+                        <div class="entries">
+                            <div class="entry"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="screen screen-disabled" id="screen3">
                 <span>indev 3</span>
@@ -87,7 +99,7 @@
         <div class="logarea">
             <div class="log-upper">
                 <div class="button btn-mid btn-nowrap" onclick="toggleLogs()">
-                    <div id="log_icon" class="icon icon-normal">
+                    <div id="log_icon" class="icon icon-normal icon-flip">
                         <img src="./icons/arrow.svg">
                     </div>
                     <span>LOGS</span>
@@ -122,7 +134,7 @@
             </div>
         </div>
     </div>
-
+    <script src="./js/app.js"></script>
 </body>
 
 </html>

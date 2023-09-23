@@ -33,7 +33,9 @@
     --bg-b:#200e00;
     --btn-main-bg:#491d00;
     --btn-hover-text-color: #491d00;
+    --btn-hover-bg:#76380b;
     scroll-behavior: smooth;
+    --tc-warning:#ff5924;
 }
 
 /* width */
@@ -55,7 +57,7 @@
 
 /* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: rgba(var(--tc-r), calc(var(--tc-g)*1.4), var(--tc-b), 1 );
 }
 
 body {
@@ -73,6 +75,21 @@ body {
     flex-direction: column;
     align-items: center;
     width: 80%;
+}
+
+a{
+    color: burlywood;
+}
+
+/* ///////////// Activity Box ////////////// */
+
+.activity-box{
+    position: relative;
+    width: 100%;
+    height: 15em;
+    border: solid;
+    border-radius: 0.2em;
+    overflow: hidden;
 }
 
 .ab-bg{
@@ -108,6 +125,7 @@ body {
     background-image: linear-gradient(to top, rgba(var(--tc-r), var(--tc-g), var(--tc-b), var(--scan-alpha)) 0px, transparent 5em);
 }
 
+/* ////////////////// Screens //////////////////// */
 
 .screen{
     position: absolute;
@@ -121,6 +139,7 @@ body {
     z-index: 0;
     opacity: 1;
     transition: all 0.4s cubic-bezier(0.075, 0.82, 0.165, 1);
+    overflow-y: auto;
 }
 
 .screen-disabled{
@@ -131,21 +150,13 @@ body {
     transition: all 0.4s cubic-bezier(0.075, 0.82, 0.165, 1);
 }
 
-
-.activity-box{
-    position: relative;
-    width: 100%;
-    height: 15em;
-    border: solid;
-    border-radius: 0.2em;
-    overflow: hidden;
-}
+/* //////////////// File drop zones //////////////// */
 
 .drop-zone{
     width: 100%;
     height: 100%;
     position: absolute;
-    z-index: 500;
+    z-index: 10;
 }
 
 .drag-screen:hover{
@@ -159,16 +170,19 @@ body {
 }
 
 .drag-screen{
-    width: 100%;
-    height: 100%;
-    position: relative;
-    display: flex;
-    padding: 0.3em;
+    background: rgba(255, 0, 0, 0.098);
     flex-wrap: wrap;
     align-content: center;
     justify-content: center;
     align-items: center;
-    background: rgba(255, 0, 0, 0.098);
+}
+
+.bounding-box{
+    width: 99%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    padding: 0.3em 0 0.3em 0;
     border-left: dotted;
     border-right: dotted;
     border-top: solid;
@@ -288,7 +302,7 @@ body {
     padding-inline: 0.5em;
     cursor: pointer;
     position: relative;
-    z-index: 1000;
+    z-index: 15;
     background: var(--btn-main-bg);
     transition: background 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     display: flex;
@@ -300,16 +314,8 @@ body {
 }
 
 .button:hover{
-    background: rgb(var(--tc-r), var(--tc-g), var(--tc-b));
-    color: var(--btn-hover-text-color);
-}
-
-.button:hover>.icon-normal{
-    filter: brightness(0.31) contrast(1.15);
-}
-
-.button:hover>.icon-invert{
-    filter: none;
+    background: var(--btn-hover-bg);
+    /* color: var(--btn-hover-text-color); */
 }
 
 .button>span{
@@ -348,6 +354,20 @@ body {
     opacity: 0;
 }
 
+.btn-danger{
+    color: var(--tc-warning);
+    border-color: var(--tc-warning);
+    background: #200e00;
+}
+
+.btn-danger:hover{
+    background: #351701;
+}
+
+.btn-danger .icon{
+    filter: invert(1) hue-rotate(156deg) brightness(1.5);
+}
+
 /*///////////// Icons //////////////*/
 
 .icon {
@@ -369,6 +389,241 @@ body {
     transform: rotate(180deg);
 }
 
+/* ////////////// Section styles //////////////// */
+
+.header-info, .token-info{
+    width: 90%;
+}
+
+/* ////////////// Entry styling ///////////////// */
+
+.entries{
+    width: 100%;
+}
+
+.entry{
+    display: flex;
+    flex-direction: row;
+    align-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 0.2em;
+}
+
+.entry-value{
+    width: 6em;
+    margin-left: 0.3em;
+}
+
+/* ////////////// Custom select ///////////////// */
+
+/* The container must be positioned relative: */
+.custom-select {
+    position: relative;
+    font-family: Haxcorp;
+    font-size: 0.8em;
+    background-color: var(--btn-main-bg);
+    border-radius: 0.2em;
+}
+
+/*hide original SELECT element: */
+.custom-select select {
+    display: none;
+}
+
+.select-selected {
+    background-color: var(--btn-main-bg);
+    border: solid;
+}
+
+.select-selected:hover, .select-items div:hover{
+    background-color: var(--btn-hover-bg);
+}
+
+/* Style the arrow inside the select element: */
+.select-selected:after {
+    position: absolute;
+    content: "";
+    width: 0.8em;
+    height: 0.8em;
+    display: inline-block;
+    right: 0.2em;
+    background: #ff000000 url(../icons/arrow.svg) no-repeat 0em 0em;
+    background-size: 0.7em;
+    transition: all 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
+    transform: rotate(-180deg);
+}
+
+/* Point the arrow upwards when the select box is open (active): */
+.select-selected.select-arrow-active:after {
+    transform: rotate(0deg);
+}
+
+/* style the items (options), including the selected item: */
+.select-items div{
+    color: rgb(var(--tc-r), var(--tc-g), var(--tc-b));
+    padding: 0.2em;
+    border: 0.06em solid transparent;
+    border-color: transparent transparent rgba(0, 0, 0, 0.1) transparent;
+    cursor: pointer;
+}
+
+.select-selected {
+    color: rgb(var(--tc-r), var(--tc-g), var(--tc-b));
+    padding: 0.2em;
+    border: 0.06em solid;
+    cursor: pointer;
+    border-radius: 0.2em;
+    z-index: 1200;
+}
+
+/* Changes lower half of the border and straightens bottom corners when select is activated */
+.select-selected.select-selected.select-arrow-active{
+    border-radius: 0.2em 0.2em 0em 0em;
+    border-bottom-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Style items (options): */
+.select-items {
+    position: absolute;
+    background-color: var(--btn-main-bg);
+    left: 0;
+    right: 0;
+    top: 100%;
+    z-index: 1000;
+    border: solid;
+    border-top: none;
+    border-width: 0.07em;
+    border-radius: 0em 0em 0.2em 0.2em;
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+/* Hide the items when the select box is closed: */
+.select-hide {
+    transform: scale(1,0) translate(0, -100%);
+    top: 0;
+    opacity: 0;
+    z-index: -2000;
+    pointer-events: none;
+}
+
+.same-as-selected {
+    display: none;
+}
+
+.select-disabled {
+    filter: brightness(0.6) saturate(0.6);
+    pointer-events: none;
+}
+
+/* Default input styling */
+
+input{
+    font-family: Haxcorp;
+    font-size: 0.8em;
+    background: var(--btn-main-bg);
+    color: rgb(var(--tc-r), var(--tc-g), var(--tc-b));
+    border: solid rgb(var(--tc-r), var(--tc-g), var(--tc-b)) 0.06em;
+    padding: 0.2em;
+    border-radius: 0.2em;
+    width: 7em;
+}
+
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none;
+}
+
+input:disabled{
+    filter: brightness(0.6) saturate(0.6);
+}
+
+
+/* ///////////// Alerts /////////////// */
+#alert_target{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+.alert-areablock{
+    position: fixed;
+    height: 100vh;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+    padding-inline: 17%;
+    z-index: 3000;
+    background: rgb(0 0 0 / 77%);
+}
+
+.alert{
+    border: solid;
+    border-radius: 0.2em;
+    border-color: var(--tc-warning);
+    padding: 0.1em;
+    padding-top: 0.3em;
+    padding-bottom: 0.3em;
+    display: flex;
+    flex-direction: column;
+    align-content: center;
+    align-items: center;
+    background: rgba(18, 15, 13, 0.9);
+    overflow: hidden;
+}
+
+.alert-header{
+    display: flex;
+    align-content: center;
+    align-items: center;
+    flex-direction: row;
+    font-size: 1.6em;
+    color: var(--tc-warning);
+    font-family: Born2bSportyV2;
+}
+
+.alert-header>.icon{
+    filter: invert(1) hue-rotate(156deg) brightness(1.5);
+}
+
+.alert-content{
+    overflow-y: auto;
+    max-height: 18em;
+    padding-inline: 0.6em;
+    font-size: 0.45em;
+    font-family: ShareTech_Regular;
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+.alert-content p{
+    margin-top: 0;
+}
+
+.alert-buttons{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+    width: 100%;
+}
+
+.alert-show{
+    animation-name: alert-show;
+    animation-duration: 0.8s;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+}
+
+.alert-hide{
+    animation-name: alert-hide;
+    animation-duration: 0.8s;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+}
 
 /*///////////// Animations //////////////*/
 @keyframes scan-anim {
@@ -378,4 +633,62 @@ body {
     to {
         background-position-y: 23em;
     }
+}
+
+@keyframes alert-show {
+    0%{
+        width: 0%;
+        height: 0%;
+        opacity: 0;
+    }
+    4%{
+        width: 0%;
+        height: 0%;
+        opacity: 1;
+    }
+    60%{
+        width: 100%;
+        height: 0%;
+        opacity: 1;
+    }
+    65%{
+        width: 100%;
+        height: 0%;
+        opacity: 1;
+    }
+    100%{
+        width: 100%;
+        height: 62%;
+        opacity: 1;
+    }
+
+}
+
+@keyframes alert-hide {
+    0%{
+        width: 100%;
+        height: 62%;
+        opacity: 1;
+    }
+    35%{
+        width: 100%;
+        height: 0%;
+        opacity: 1;
+    }
+    40%{
+        width: 100%;
+        height: 0%;
+        opacity: 1;
+    }
+    96%{
+        width: 0%;
+        height: 0%;
+        opacity: 1;
+    }
+    100%{
+        width: 0%;
+        height: 0%;
+        opacity: 0;
+    }
+
 }

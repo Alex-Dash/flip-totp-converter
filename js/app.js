@@ -3,6 +3,7 @@ const urlMainReg = new RegExp(`\\/\\/(.*?)\\/(.*?)((:(.*))|$)`)
 const urlParamsReg = new RegExp(`([^&]+?)=([^&]+)`, "g")
 const totpconfigReg = new RegExp(`(.+?):(.+)`, "g")
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+
 const ALGOMAP = {
     to:["SHA1", "SHA256", "SHA512", "STEAM"],
     from:{
@@ -12,6 +13,179 @@ const ALGOMAP = {
         "STEAM":3
     }
 }
+
+const TYPEINFO = {
+    totpconfig:{
+        header:{
+            Filetype:{
+                type: "string",
+                protected: true,
+                default: "Flipper TOTP plugin config file"
+            },
+            Version:{
+                type: "int",
+                protected: true
+            },
+            CryptoVersion:{
+                type: "int",
+                protected: true
+            },
+            CryptoKeySlot:{
+                type: "int",
+                protected: true
+            },
+            Salt:{
+                type: "bytearray",
+                protected: true
+            },
+            Crypto:{
+                type: "bytearray",
+                protected: true
+            },
+            Timezone:{
+                type: "float",
+                protected: false,
+                default: 0.0
+            },
+            PinIsSet:{
+                type: "bool",
+                protected: true,
+                set: [
+                    {label:"Yes", value: true},
+                    {label:"No", value: false},
+                ],
+                default:0
+            },
+            NotificationMethod:{
+                type: "int",
+                protected: false,
+                set: [
+                    {label:"Do not notify", value: 0},
+                    {label:"Sound only", value: 1},
+                    {label:"Vibro only", value: 2},
+                    {label:"Sound and vibro", value: 3},
+                ],
+                default:3
+            },
+            AutomationMethod:{
+                type: "int",
+                protected: false,
+                set: [
+                    {label:"None", value: 0},
+                    {label:"USB", value: 1},
+                    {label:"Bluetooth", value: 2},
+                    {label:"USB and Bluetooth", value: 3},
+                ],
+                default:1
+            },
+            Font:{
+                type: "int",
+                protected: false,
+                set: [
+                    {label:"Mode Nine", value: 0},
+                    {label:"712 Serif", value: 1},
+                    {label:"Bedstead", value: 2},
+                    {label:"DP Comic", value: 3},
+                    {label:"Fun Climbing", value: 4},
+                    {label:"Graph 35pix", value: 5},
+                    {label:"Karma Future", value: 6},
+                    {label:"Pixel Flag", value: 7},
+                    {label:"RedHat Mono", value: 8},
+                    {label:"Zector", value: 9},
+                ],
+                default:0
+            },
+            AutomationKbLayout:{
+                type: "float",
+                protected: false,
+                set: [
+                    {label:"QWERTY", value: 0},
+                    {label:"AZERTY", value: 1},
+                    {label:"QWERTZ", value: 2}
+                ],
+                default:0
+
+            }
+        },
+        entry:{
+            TokenName: {
+                type: "string",
+                protected: false,
+                default: "Unnamed token"
+            },
+            TokenSecret: {
+                type: "string",
+                protected: false,
+                default:"<Paste your secret here>"
+            },
+            TokenAlgo: {
+                type: "int",
+                protected: false,
+                set: [
+                    {label:"SHA1", value: 0},
+                    {label:"SHA256", value: 1},
+                    {label:"SHA512", value: 2},
+                    {label:"STEAM", value: 3},
+                ],
+                default:0
+            },
+            TokenDigits: {
+                type: "int",
+                protected: false,
+                set: [
+                    {label:"5", value: 5},
+                    {label:"6", value: 6},
+                    {label:"8", value: 8},
+                ],
+                default:1
+            },
+            TokenDuration: {
+                type: "int",
+                protected: false,
+                default:30
+            },
+            TokenAutomationFeatures: {
+                type: "int",
+                protected: false,
+                set: [
+                    {label:"None", value: 0},
+                    {label:"Press Enter", value: 1},
+                    {label:"Press Tab", value: 2},
+                    {label:"Type Slower", value: 4},
+                    {label:"Type Slower and press Enter", value: 5},
+                    {label:"Type Slower and press Tab", value: 6},
+                ],
+                default:0
+            }
+        }
+    }
+}
+
+const LOCALIZATION = {
+    totpconf:{
+        "Filetype": "File type",
+        "Version": "Version",
+        "CryptoVersion": "Crypto Version",
+        "CryptoKeySlot": "Crypto Key Slot",
+        "BaseIV":"Base IV",
+        "Salt": "Salt",
+        "Crypto": "Crypto",
+        "Timezone": "Timezone",
+        "PinIsSet": "Pin Set",
+        "NotificationMethod": "Notification Method",
+        "AutomationMethod": "Automation Method",
+        "Font": "Font",
+        "AutomationKbLayout": "Automation Keyboard Layout",
+        "TokenName": "Automation Method",
+        "TokenSecret": "Secret",
+        "TokenAlgo": "Algorithm",
+        "TokenDigits": "Digits",
+        "TokenDuration": "Duration",
+        "TokenAutomationFeatures": "Automation Features"
+    }
+}
+
+var PARAMS_LOCKED = true
 
 // defaults
 var DEFAULTS = {
@@ -28,20 +202,11 @@ var DEFAULTS = {
     Font:0,
     AutomationKbLayout:0
 }
-var HEADER = {
-    Filetype: "Flipper TOTP plugin config file",
-    Version:null,
-    CryptoVersion:null,
-    CryptoKeySlot:null,
-    Salt:null,
-    Crypto:null,
-    Timezone:0,
-    PinIsSet:false,
-    NotificationMethod:3,
-    AutomationMethod:1,
-    Font:0,
-    AutomationKbLayout:0
-}
+
+// preloaded header
+var HEADER = JSON.parse(JSON.stringify(DEFAULTS))
+
+var TOKEN_ENTRIES = []
 
 var FILE_STATE = {
     exports:[],
@@ -57,6 +222,7 @@ function shorten(string, start, end) {
 
 async function parseFileList(list) {
     recordFileState("exports")
+    TOKEN_ENTRIES = []
     progress = document.getElementById(`drag${zone}2`)
     if(list.length==0){
         // should never happen in practice, but who knows
@@ -103,6 +269,7 @@ async function readFileAsync(file, context) {
                     loaderError(r.error, 1)
                     return
                 }
+                TOKEN_ENTRIES.push(r)
                 flipperizeEntries(r).then(x=>console.log(x.data))
             }
             )
@@ -436,7 +603,9 @@ async function s1ButtonCheck() {
 }
 
 async function s1ButtonContinue() {
-    transitionToScreen(2)
+    transitionToScreen(2);
+    updateHeaderUI(HEADER);
+    unlockParams(false)
 }
 
 async function transitionToScreen(screen_id) {
@@ -457,3 +626,249 @@ async function transitionToScreen(screen_id) {
     s.classList.remove("screen-disabled")
 
 }
+
+function generateInput(id, type, isProtected, value, default_value, set) {
+    if(set!==undefined){
+        // generate select
+        ops = []
+        for (const op of set) {
+            selected = (value+"" == op.value+"")?` selected`:""
+            ops.push(`<option value="${op.value}"${selected}>${op.label}</option>`)
+        }
+        dis = (isProtected===true)?` select-disabled`:""
+        return `<div class="custom-select${dis}"><select id="${id}">${ops.join(`\n`)}</select></div>`
+
+    } else {
+        // generate input
+        t = (type==="number" || type==="int" || type==="float")?"number":"text"
+        q = (type==="number" || type==="int" || type==="float")?"":"\""
+        s = (type==="float")?` min=-12 max=12 step=0.25`:""
+        d = (isProtected===true)?` disabled="true"`:""
+        v = (value!==undefined && value!==null)?` value=${q}${value}${q} placeholder="${default_value}"`:` placeholder="${default_value}"`
+        return `<input type="${t}" id="${id}"${v}${s}${d}></input>`
+    }
+}
+
+function updateHeaderUI(h) {
+    
+    entries = []
+    ids = []
+    for (const k of Object.keys(h)) {
+        isExpected = Object.keys(TYPEINFO.totpconfig.header).includes(k)
+        localized = (Object.keys(LOCALIZATION.totpconf).includes(k))?LOCALIZATION.totpconf[k]:k
+        
+        var v
+        if(isExpected){
+            ref = TYPEINFO.totpconfig.header[k]
+            v = generateInput(k, ref.type, ref.protected, h[k], (ref.default==undefined || ref.default==null)? "&lt;missing value&gt;": ref.default, ref.set)
+        } else {
+            v = generateInput(k, "string", false, h[k], "&lt;unknown&gt;", undefined)
+        }
+        ids.push(k)
+
+        entries.push(`<div class="entry"><div class="entry-label"><span>${localized}</span></div><div class="entry-value">${v}</div></div>`)
+    }
+    document.getElementById("ui_header").innerHTML = `<div class="section-label"><span>Global Settings</span></div><div class="entries">${entries.join(`\n`)}</div>`
+    
+    // update custom selects
+    setDropdowns()
+}
+
+// Custom dropdowns setup
+/* Look for any elements with the class "custom-select": */
+function setDropdowns() {
+    x = document.getElementsByClassName("custom-select");
+    l = x?.length || 0;
+    for (i = 0; i < l; i++) {
+        setupCustomSelect(x[i].getElementsByTagName("select")[0], x)
+    }
+}
+setDropdowns()
+
+function setupCustomSelect(selElmnt, x) {
+    // Safeguard if element doesn't exist
+    if(selElmnt===undefined || selElmnt?.length ===undefined){
+        return
+    }
+
+    if(x===undefined){
+        x = document.getElementsByClassName("custom-select")
+    }
+
+    ll = selElmnt.length;
+    /* For each element, create a new DIV that will act as the selected item: */
+    a = document.createElement("DIV");
+    a.setAttribute("class", "select-selected");
+    a.innerHTML = selElmnt.options[selElmnt.selectedIndex].innerHTML;
+    x[i].appendChild(a);
+    /* For each element, create a new DIV that will contain the option list: */
+    b = document.createElement("DIV");
+    b.setAttribute("class", "select-items select-hide");
+    for (j = 0; j < ll; j++) {
+        /* For each option in the original select element,
+        create a new DIV that will act as an option item: */
+        c = document.createElement("DIV");
+        c.innerHTML = selElmnt.options[j].innerHTML;
+        c.addEventListener("click", function (e) {
+            clickSelectOpt(e, this)
+        });
+        b.appendChild(c);
+    }
+    x[i].appendChild(b);
+    a.addEventListener("click", function (e) {
+        /* When the select box is clicked, close any other select boxes,
+        and open/close the current select box: */
+        e.stopPropagation();
+        closeAllSelect(this);
+        this.nextSibling.classList.toggle("select-hide");
+        this.classList.toggle("select-arrow-active");
+    });
+}
+
+function clickSelectOpt(e, t) {
+    /* When an item is clicked, update the original select box,
+        and the selected item: */
+        var y, i, k, s, h, sl, yl;
+        s = t.parentNode.parentNode.getElementsByTagName("select")[0];
+        sl = s.length;
+        h = t.parentNode.previousSibling;
+        for (i = 0; i < sl; i++) {
+          if (s.options[i].innerHTML == t.innerHTML) {
+            s.selectedIndex = i;
+            h.innerHTML = t.innerHTML;
+            y = t.parentNode.getElementsByClassName("same-as-selected");
+            yl = y.length;
+            for (k = 0; k < yl; k++) {
+              y[k].removeAttribute("class");
+            }
+            t.setAttribute("class", "same-as-selected");
+            break;
+          }
+        }
+        h.click();
+}
+
+function closeAllSelect(elmnt) {
+  /* A function that will close all select boxes in the document,
+  except the current select box: */
+  var x, y, i, xl, yl, arrNo = [];
+  x = document.getElementsByClassName("select-items");
+  y = document.getElementsByClassName("select-selected");
+  xl = x?.length || 0;
+  yl = y?.length || 0;
+  for (i = 0; i < yl; i++) {
+    if (elmnt == y[i]) {
+      arrNo.push(i)
+    } else {
+      y[i].classList.remove("select-arrow-active");
+    }
+  }
+  for (i = 0; i < xl; i++) {
+    if (arrNo.indexOf(i)) {
+      x[i].classList.add("select-hide");
+    }
+  }
+}
+
+async function unlockParams(state, back) {
+    b = document.getElementById("params_toggle")
+    switch (state) {
+        case true:
+            // unlock params
+
+            // unlock selectors
+            for (const sel of document.getElementsByClassName("custom-select")) {
+                sel.classList.remove("select-disabled")
+            }
+
+            // unlock inputs
+            for (const sel of document.getElementsByTagName("input")) {
+                sel.disabled = false
+            }
+
+            b.classList.remove("btn-danger")
+            b.getElementsByTagName("span")[0].innerHTML = "LOCK SYSTEM PARAMETERS"
+            b.getElementsByTagName("img")[0].src = "./icons/lock.svg"
+            b.onclick = () =>{
+                unlockParams(false)
+            }
+            PARAMS_LOCKED = false
+            // hide alert
+            document.getElementById("unlock_alert").classList.remove("alert-show")
+            document.getElementById("unlock_alert").classList.add("alert-hide")
+            await sleep(800)
+            // clear alerts and bgs
+            document.getElementById("alert_target").innerHTML = ``
+            break;
+        case false:
+            if(back){
+                // hide alert
+                document.getElementById("unlock_alert").classList.remove("alert-show")
+                document.getElementById("unlock_alert").classList.add("alert-hide")
+                await sleep(800)
+                // clear alerts and bgs
+                document.getElementById("alert_target").innerHTML = ``
+            } else {
+                if(!PARAMS_LOCKED){
+                    // lock params
+                    // lock selects
+                    for (const sel of document.getElementsByClassName("custom-select")) {
+                        id = sel.getElementsByTagName("select")[0]?.id
+                        if(id===undefined){
+                            continue
+                        }
+                        if(TYPEINFO.totpconfig.header[id]?.protected || TYPEINFO.totpconfig.entry[id]?.protected){
+                            sel.classList.add("select-disabled")
+                        }
+                    }
+
+                    // lock inputs
+                    for (const sel of document.getElementsByTagName("input")) {
+                        if(sel.id===undefined){
+                            continue
+                        }
+                        if(TYPEINFO.totpconfig.header[sel.id]?.protected || TYPEINFO.totpconfig.entry[sel]?.protected){
+                            sel.disabled = true
+                        }
+                    }
+                }
+                b.classList.add("btn-danger")
+                b.getElementsByTagName("span")[0].innerHTML = "UNLOCK SYSTEM PARAMETERS"
+                b.getElementsByTagName("img")[0].src = "./icons/unlock.svg"
+                b.onclick = ()=>{
+                    unlockParams()
+                } 
+                PARAMS_LOCKED = true
+            }
+            
+            break;
+    
+        default:
+            //show alert
+            document.getElementById("alert_target").innerHTML = `
+            <div class="alert-areablock">
+            <div id="unlock_alert" class="alert alert-show">
+                <div class="alert-header"><div class="icon"><img src="./icons/warning.svg"> </div><span>WARNING</span></div>
+                <div class="alert-content">
+                    <i><p>It is dangerous to go... at all!</p></i>
+                    <p>You are attempting to unlock parameters set by the Flipper Authenticator itself. Those settings are not meant to be changed manually and  have been locked to prevent accidental loss of data.</p>
+                    <p>Changing those parameters could lead to incorrect code generation, failure to open the app, backup system failure, complete config reset, inability to enter the pin, token corruption or complete system hault/crash.</p>
+                    <p>To safely change most of them, open the settings screen in the Flipper Authenticator by pressing the "OK" button. To safely change some settings you would need to use Flipper CLI. Please consult the manual over at <a target="_blank" href="https://github.com/akopachov/flipper-zero_authenticator/blob/master/docs/conf-file_description.md">The Official GitHub Repo</a> to make sure nothing would be corrupted.</p>
+                    <p>Only change those settings manually if you completely understand what you are doing.</p>
+                    <p>Are you sure you want to proceed?</p>
+                </div>
+                <div class="alert-buttons">
+                    <div class="button btn-danger" onclick="unlockParams(true)"><div class="icon"><img src="./icons/unlock.svg"></div><span>YES, DO AS I SAY</span></div>
+                    <div class="button" onclick="unlockParams(false, true)"><span>NO, GO BACK</span></div>
+                </div>
+            </div>
+        </div>
+            `
+            break;
+    }
+
+}
+
+/* If the user clicks anywhere outside the select box,
+then close all select boxes: */
+document.addEventListener("click", closeAllSelect);
