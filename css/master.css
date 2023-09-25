@@ -36,6 +36,8 @@
     --btn-hover-bg:#76380b;
     scroll-behavior: smooth;
     --tc-warning:#ff5924;
+    --tc-green-main:#2ed832;
+    --tc-green-alpha:#2ed83145;
 }
 
 /* width */
@@ -368,6 +370,20 @@ a{
     filter: invert(1) hue-rotate(156deg) brightness(1.5);
 }
 
+.exp{
+    margin-top: 0.4em;
+    margin-bottom: 0.8em;
+}
+
+.move-btn{
+    cursor: pointer;
+    margin-bottom: 48%;
+}
+
+.move-btn:hover{
+    filter: brightness(1.5);
+}
+
 /*///////////// Icons //////////////*/
 
 .icon {
@@ -385,11 +401,19 @@ a{
     filter: brightness(0.31) contrast(1.15);
 }
 
+.icon-red{
+    filter: invert(1) hue-rotate(156deg) brightness(1.5);
+}
+
 .icon-flip{
     transform: rotate(180deg);
 }
 
 /* ////////////// Section styles //////////////// */
+
+.section-label{
+    margin-bottom: 0.4em;
+}
 
 .header-info, .token-info{
     width: 90%;
@@ -397,6 +421,27 @@ a{
 
 .token-info .bounding-box{
     padding: 0.2em;
+    margin-bottom: 0.4em;
+}
+
+hr{
+    border-color: rgb(var(--tc-r) var(--tc-g) var(--tc-b));
+}
+
+.screen>hr{
+    width: 90%;
+}
+
+.add-box{
+    padding: 0.8em;
+    width: 75%;
+    display: flex;
+    align-items: center;
+    align-content: center;
+    justify-content: center;
+    background: var(--tc-green-alpha);
+    border-color: var(--tc-green-main);
+    margin-top: 0.3em;
 }
 /* ////////////// Entry styling ///////////////// */
 
@@ -609,6 +654,7 @@ input:disabled{
     align-items: center;
     background: rgba(18, 15, 13, 0.9);
     overflow: hidden;
+    justify-content: space-between;
 }
 
 .alert-header{
@@ -659,6 +705,33 @@ input:disabled{
     animation-duration: 0.8s;
     animation-iteration-count: 1;
     animation-fill-mode: forwards;
+}
+
+/* //////////// Screen 3, editor and download /////////////// */
+
+.editor{
+    width: 85%;
+}
+
+.editor textarea{
+    width: 95%;
+    font-family: ShareTech_Mono;
+    color: rgb(var(--tc-r) var(--tc-g) var(--tc-b));
+    background: rgb(37, 21, 0);
+    border: solid;
+    padding: 0.6em;
+    font-size: 0.3em;
+    border-radius: 0.2em;
+}
+
+.s3-buttons{
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
+    margin-top: 0.2em;
 }
 
 /*///////////// Animations //////////////*/

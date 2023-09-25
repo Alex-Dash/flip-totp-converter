@@ -170,7 +170,7 @@ const LOCALIZATION = {
         "BaseIV":"Base IV",
         "Salt": "Salt",
         "Crypto": "Crypto",
-        "Timezone": "Timezone",
+        "Timezone": "Timezone Offset (hrs)",
         "PinIsSet": "Pin Set",
         "NotificationMethod": "Notification Method",
         "AutomationMethod": "Automation Method",
@@ -207,11 +207,17 @@ var DEFAULTS = {
 var HEADER = JSON.parse(JSON.stringify(DEFAULTS))
 
 var TOKEN_ENTRIES = []
+var ALL_TOKEN_ENTRIES = []
 
 var FILE_STATE = {
     exports:[],
     totp:[]
 }
+
+var VALID_FOR_EXPORT = []
+var invalid_entries = []
+
+var force_user_inputted_tz = false
 
 function shorten(string, start, end) {
     if(start+end+3>=string.length){
@@ -655,7 +661,7 @@ function generateInput(id, type, isProtected, value, default_value, set) {
         // generate input
         t = (type==="number" || type==="int" || type==="float")?"number":"text"
         q = (type==="number" || type==="int" || type==="float")?"":"\""
-        s = (type==="float")?` min=-12 max=12 step=0.25`:""
+        s = (type==="float")?` min=-12.75 max=12.75 step=0.25`:""
         d = (isProtected===true)?` disabled="true"`:""
         v = (value!==undefined && value!==null)?` value=${q}${value}${q} placeholder="${default_value}"`:` placeholder="${default_value}"`
         return `<input type="${t}" id="${id}"${v}${s}${d}></input>`
@@ -663,9 +669,9 @@ function generateInput(id, type, isProtected, value, default_value, set) {
 }
 
 function updateHeaderUI(h) {
-    
     entries = []
     ids = []
+    force_user_inputted_tz = false
     for (const k of Object.keys(h)) {
         isExpected = Object.keys(TYPEINFO.totpconfig.header).includes(k)
         localized = (Object.keys(LOCALIZATION.totpconf).includes(k))?LOCALIZATION.totpconf[k]:k
@@ -681,171 +687,10 @@ function updateHeaderUI(h) {
 
         entries.push(`<div class="entry"><div class="entry-label"><span>${localized}</span></div><div class="entry-value">${v}</div></div>`)
     }
-    document.getElementById("ui_header").innerHTML = `<div class="section-label"><span>Global Settings</span></div><div class="entries">${entries.join(`\n`)}</div>`
+    document.getElementById("ui_header").innerHTML = `<div class="entries">${entries.join(`\n`)}</div>`
     
     // update custom selects
     setDropdowns()
-}
-
-function updateTokensUI(tokens) {
-    tokens_flat = tokens.flat()
-    targ = document.getElementById("ui_tokens")
-    targ.innerHTML = ``
-    acc = `<div class="section-label"><span>Your tokens</span></div>`
-    for (const i in tokens_flat) {
-        acc+=`${genTokenEntry(tokens_flat[i], i)}`
-    }
-    targ.innerHTML = acc
-    // update custom selects
-    setDropdowns()
-}
-
-function genTokenEntry(data, token_id) {
-    // @TODO: simplify this mess
-    return `<div class="bounding-box">
-    <div class="entries">
-        <div class="entry">
-            <div class="entry-label"><span>${LOCALIZATION.totpconf.TokenName}</span></div>
-            <div class="entry-value entry-long">
-            ${generateInput(`${token_id}_TokenName`, TYPEINFO.totpconfig.entry.TokenName.type, TYPEINFO.totpconfig.entry.TokenName.protected, data.TokenName, TYPEINFO.totpconfig.entry.TokenName.default)}
-            </div>
-        </div>
-        <div class="entry">
-            <div class="entry-label"><span>${LOCALIZATION.totpconf.TokenSecret}</span></div>
-            <div class="entry-value entry-long">
-            ${generateInput(`${token_id}_TokenSecret`, TYPEINFO.totpconfig.entry.TokenSecret.type, TYPEINFO.totpconfig.entry.TokenSecret.protected, data.TokenSecret, TYPEINFO.totpconfig.entry.TokenSecret.default)}
-            </div>
-        </div>
-        <div class="entry entry-cramp">
-            <div class="entry-label"><span>${LOCALIZATION.totpconf.TokenAlgo}</span></div>
-            <div class="entry-value entry-short">
-            ${generateInput(`${token_id}_TokenAlgo`, TYPEINFO.totpconfig.entry.TokenAlgo.type, TYPEINFO.totpconfig.entry.TokenAlgo.protected, data.TokenAlgo, TYPEINFO.totpconfig.entry.TokenAlgo.default, TYPEINFO.totpconfig.entry.TokenAlgo.set)}
-            </div>
-        </div>
-        <div class="entry entry-cramp">
-            <div class="entry-label"><span>${LOCALIZATION.totpconf.TokenDigits}</span></div>
-            <div class="entry-value entry-short">
-            ${generateInput(`${token_id}_TokenDigits`, TYPEINFO.totpconfig.entry.TokenDigits.type, TYPEINFO.totpconfig.entry.TokenDigits.protected, data.TokenDigits, TYPEINFO.totpconfig.entry.TokenDigits.default, TYPEINFO.totpconfig.entry.TokenDigits.set)}
-            </div>
-        </div>
-        <div class="entry entry-cramp">
-            <div class="entry-label"><span>${LOCALIZATION.totpconf.TokenDuration}</span></div>
-            <div class="entry-value entry-short">
-            ${generateInput(`${token_id}_TokenDuration`, TYPEINFO.totpconfig.entry.TokenDuration.type, TYPEINFO.totpconfig.entry.TokenDuration.protected, data.TokenDuration, TYPEINFO.totpconfig.entry.TokenDuration.default, TYPEINFO.totpconfig.entry.TokenDuration.set)}
-            </div>
-        </div>
-        <div class="entry entry-cramp">
-            <div class="entry-label"><span>${LOCALIZATION.totpconf.TokenAutomationFeatures}</span></div>
-            <div class="entry-value">
-            ${generateInput(`${token_id}_TokenAutomationFeatures`, TYPEINFO.totpconfig.entry.TokenAutomationFeatures.type, TYPEINFO.totpconfig.entry.TokenAutomationFeatures.protected, (
-                TYPEINFO.totpconfig.entry.TokenAutomationFeatures.set.map(x=>x.value).indexOf(Number(data.TokenAutomationFeatures))
-            ), TYPEINFO.totpconfig.entry.TokenAutomationFeatures.default, TYPEINFO.totpconfig.entry.TokenAutomationFeatures.set)}
-                </div>
-        </div>
-    </div>
-</div>`
-
-}
-
-// Custom dropdowns setup
-/* Look for any elements with the class "custom-select": */
-function setDropdowns() {
-    x = document.getElementsByClassName("custom-select");
-    l = x?.length || 0;
-    for (i = 0; i < l; i++) {
-
-        if (x[i].getElementsByClassName("select-selected").length!==0) {
-            // custom select exists, ignore
-            continue
-        }
-        setupCustomSelect(x[i].getElementsByTagName("select")[0], x)
-    }
-}
-setDropdowns()
-
-function setupCustomSelect(selElmnt, x) {
-    // Safeguard if element doesn't exist
-    if(selElmnt===undefined || selElmnt?.length ===undefined){
-        return
-    }
-
-    if(x===undefined){
-        x = document.getElementsByClassName("custom-select")
-    }
-
-    ll = selElmnt.length;
-    /* For each element, create a new DIV that will act as the selected item: */
-    a = document.createElement("DIV");
-    a.setAttribute("class", "select-selected");
-    a.innerHTML = selElmnt.options[selElmnt.selectedIndex].innerHTML;
-    x[i].appendChild(a);
-    /* For each element, create a new DIV that will contain the option list: */
-    b = document.createElement("DIV");
-    b.setAttribute("class", "select-items select-hide");
-    for (j = 0; j < ll; j++) {
-        /* For each option in the original select element,
-        create a new DIV that will act as an option item: */
-        c = document.createElement("DIV");
-        c.innerHTML = selElmnt.options[j].innerHTML;
-        c.addEventListener("click", function (e) {
-            clickSelectOpt(e, this)
-        });
-        b.appendChild(c);
-    }
-    x[i].appendChild(b);
-    a.addEventListener("click", function (e) {
-        /* When the select box is clicked, close any other select boxes,
-        and open/close the current select box: */
-        e.stopPropagation();
-        closeAllSelect(this);
-        this.nextSibling.classList.toggle("select-hide");
-        this.classList.toggle("select-arrow-active");
-    });
-}
-
-function clickSelectOpt(e, t) {
-    /* When an item is clicked, update the original select box,
-        and the selected item: */
-        var y, i, k, s, h, sl, yl;
-        s = t.parentNode.parentNode.getElementsByTagName("select")[0];
-        sl = s.length;
-        h = t.parentNode.previousSibling;
-        for (i = 0; i < sl; i++) {
-          if (s.options[i].innerHTML == t.innerHTML) {
-            s.selectedIndex = i;
-            h.innerHTML = t.innerHTML;
-            y = t.parentNode.getElementsByClassName("same-as-selected");
-            yl = y.length;
-            for (k = 0; k < yl; k++) {
-              y[k].removeAttribute("class");
-            }
-            t.setAttribute("class", "same-as-selected");
-            break;
-          }
-        }
-        h.click();
-}
-
-function closeAllSelect(elmnt) {
-  /* A function that will close all select boxes in the document,
-  except the current select box: */
-  var x, y, i, xl, yl, arrNo = [];
-  x = document.getElementsByClassName("select-items");
-  y = document.getElementsByClassName("select-selected");
-  xl = x?.length || 0;
-  yl = y?.length || 0;
-  for (i = 0; i < yl; i++) {
-    if (elmnt == y[i]) {
-      arrNo.push(i)
-    } else {
-      y[i].classList.remove("select-arrow-active");
-    }
-  }
-  for (i = 0; i < xl; i++) {
-    if (arrNo.indexOf(i)) {
-      x[i].classList.add("select-hide");
-    }
-  }
 }
 
 async function unlockParams(state, back) {
@@ -872,20 +717,12 @@ async function unlockParams(state, back) {
             }
             PARAMS_LOCKED = false
             // hide alert
-            document.getElementById("unlock_alert").classList.remove("alert-show")
-            document.getElementById("unlock_alert").classList.add("alert-hide")
-            await sleep(800)
-            // clear alerts and bgs
-            document.getElementById("alert_target").innerHTML = ``
+            await hideAlert("unlock_alert")
             break;
         case false:
             if(back){
                 // hide alert
-                document.getElementById("unlock_alert").classList.remove("alert-show")
-                document.getElementById("unlock_alert").classList.add("alert-hide")
-                await sleep(800)
-                // clear alerts and bgs
-                document.getElementById("alert_target").innerHTML = ``
+                await hideAlert("unlock_alert")
             } else {
                 if(!PARAMS_LOCKED){
                     // lock params
@@ -946,6 +783,451 @@ async function unlockParams(state, back) {
     }
 
 }
+
+
+function updateTokensUI(tokens) {
+    tokens_flat = tokens.flat()
+    targ = document.getElementById("ui_tokens")
+    targ.innerHTML = ``
+    acc = ``
+    for (const i in tokens_flat) {
+        acc+=`${genTokenEntry(tokens_flat[i], i)}`
+    }
+    targ.innerHTML = acc
+    // update custom selects
+    setDropdowns()
+}
+
+function genTokenEntry(data, token_id) {
+    // @TODO: simplify this mess
+    return `<div class="bounding-box" id="eid_${token_id}">
+    <div>
+        <div class="move-btn del-btn" onclick="deleteEntry(this)"><div class="icon icon-red"><img src="./icons/trash.svg"></div></div>
+        <div class="move-btn" onclick="moveBox(${token_id}, -1)"><div class="icon"><img src="./icons/arrow.svg"></div></div>
+        <div class="move-btn" onclick="moveBox(${token_id}, 1)"><div class="icon icon-flip"><img src="./icons/arrow.svg"></div></div>
+    </div>
+    <div class="entries">
+        <div class="entry">
+            <div class="entry-label"><span>${LOCALIZATION.totpconf.TokenName}</span></div>
+            <div class="entry-value entry-long">
+            ${generateInput(`${token_id}_TokenName`, TYPEINFO.totpconfig.entry.TokenName.type, TYPEINFO.totpconfig.entry.TokenName.protected, data.TokenName, TYPEINFO.totpconfig.entry.TokenName.default)}
+            </div>
+        </div>
+        <div class="entry">
+            <div class="entry-label"><span>${LOCALIZATION.totpconf.TokenSecret}</span></div>
+            <div class="entry-value entry-long">
+            ${generateInput(`${token_id}_TokenSecret`, TYPEINFO.totpconfig.entry.TokenSecret.type, TYPEINFO.totpconfig.entry.TokenSecret.protected, data.TokenSecret, TYPEINFO.totpconfig.entry.TokenSecret.default)}
+            </div>
+        </div>
+        <div class="entry entry-cramp">
+            <div class="entry-label"><span>${LOCALIZATION.totpconf.TokenAlgo}</span></div>
+            <div class="entry-value entry-short">
+            ${generateInput(`${token_id}_TokenAlgo`, TYPEINFO.totpconfig.entry.TokenAlgo.type, TYPEINFO.totpconfig.entry.TokenAlgo.protected, data.TokenAlgo, TYPEINFO.totpconfig.entry.TokenAlgo.default, TYPEINFO.totpconfig.entry.TokenAlgo.set)}
+            </div>
+        </div>
+        <div class="entry entry-cramp">
+            <div class="entry-label"><span>${LOCALIZATION.totpconf.TokenDigits}</span></div>
+            <div class="entry-value entry-short">
+            ${generateInput(`${token_id}_TokenDigits`, TYPEINFO.totpconfig.entry.TokenDigits.type, TYPEINFO.totpconfig.entry.TokenDigits.protected, data.TokenDigits, TYPEINFO.totpconfig.entry.TokenDigits.default, TYPEINFO.totpconfig.entry.TokenDigits.set)}
+            </div>
+        </div>
+        <div class="entry entry-cramp">
+            <div class="entry-label"><span>${LOCALIZATION.totpconf.TokenDuration}</span></div>
+            <div class="entry-value entry-short">
+            ${generateInput(`${token_id}_TokenDuration`, TYPEINFO.totpconfig.entry.TokenDuration.type, TYPEINFO.totpconfig.entry.TokenDuration.protected, data.TokenDuration, TYPEINFO.totpconfig.entry.TokenDuration.default, TYPEINFO.totpconfig.entry.TokenDuration.set)}
+            </div>
+        </div>
+        <div class="entry entry-cramp">
+            <div class="entry-label"><span>${LOCALIZATION.totpconf.TokenAutomationFeatures}</span></div>
+            <div class="entry-value">
+            ${generateInput(`${token_id}_TokenAutomationFeatures`, TYPEINFO.totpconfig.entry.TokenAutomationFeatures.type, TYPEINFO.totpconfig.entry.TokenAutomationFeatures.protected, (
+                TYPEINFO.totpconfig.entry.TokenAutomationFeatures.set.map(x=>x.value).indexOf(Number(data.TokenAutomationFeatures))
+            ), TYPEINFO.totpconfig.entry.TokenAutomationFeatures.default, TYPEINFO.totpconfig.entry.TokenAutomationFeatures.set)}
+                </div>
+        </div>
+    </div>
+</div>`
+
+}
+
+function getLastValidEID() {
+    a = [...document.getElementsByClassName("entries")].map(e=>e?.parentElement?.id).sort()
+    if(a.length===0){
+        return -1
+    } else {
+        return Number(a[a.length-1].split("_")[1])
+    }
+}
+
+function moveBox(id, dir) {
+    dom_arr = document.getElementById("ui_tokens").children
+    boundary = dom_arr.length -1
+    pointer = [...dom_arr].indexOf(document.getElementById(`eid_${id}`))
+    if(pointer+dir>boundary || pointer+dir<0){
+        // don't move if there is no spot
+        return
+    }
+
+    // save input changes to value=x for easy swap
+    for (var ent of [...dom_arr[pointer].children[1].children, ...dom_arr[pointer+dir].children[1].children]){
+        if(ent?.children?.item(1)?.children?.item(0)?.tagName?.toUpperCase() === "INPUT"){
+            ent.children[1].children[0].setAttribute("value",  ent?.children?.item(1)?.children?.item(0).value)
+        }
+    }
+
+    // swap items
+    t = dom_arr[pointer].outerHTML
+    dom_arr[pointer].outerHTML = dom_arr[pointer+dir].outerHTML
+    dom_arr[pointer+dir].outerHTML = t
+
+    // restore onclick listeners for dropdowns
+    for (const ent of [...dom_arr[pointer].children[1].children, ...dom_arr[pointer+dir].children[1].children]) {
+        e = ent?.children?.item(1)?.children?.item(0)?.children?.item(1)
+        if(e?.classList?.contains("select-selected")){
+            e.addEventListener("click", function (x) {
+                selBoxClick(x, this)
+            });
+        }
+    }
+    
+}
+
+function addTokenBox() {
+    l = document.getElementById("ui_tokens")
+    var child = document.createElement('div');
+    child.innerHTML = genTokenEntry(
+        {
+            TokenDuration: 30,
+            TokenDigits: 6
+        }, getLastValidEID()+1
+    );
+    child = child.firstChild;
+    l.appendChild(child);
+
+    // update dropdowns
+    setDropdowns()
+}
+
+function deleteEntry(t) {
+    t.parentElement.parentElement.remove()
+}
+
+async function tz_alert(param) {
+    switch (param) {
+        case "force":
+            force_user_inputted_tz = true
+            break;
+        case "auto":
+            document.getElementById("Timezone").value = checkTimezoneOffset().set_to
+            break;
+    
+        default:
+            // go back was pressed
+            break;
+    }
+    // close alert regardless
+    await hideAlert("tz_alert")
+    return
+}
+
+async function export_alert(forceExport) {
+    // close alert
+    await hideAlert("export_alert")
+    if(forceExport){
+        // go straight to export
+        s2Export(ALL_TOKEN_ENTRIES)
+    }
+    return
+}
+
+async function tryExport() {
+
+    // check header, only time as unlocking the parameters has its own warning
+    tz = checkTimezoneOffset()
+    if(tz.error!==undefined && tz.alert){
+        // show alert and exit
+        document.getElementById("alert_target").innerHTML = `
+        <div class="alert-areablock">
+        <div id="tz_alert" class="alert alert-show">
+            <div class="alert-header"><div class="icon"><img src="./icons/warning.svg"> </div><span>WARNING</span></div>
+            <div class="alert-content">
+                ${tz.error}
+            </div>
+            <div class="alert-buttons">
+                <div class="button btn-danger" onclick="tz_alert('force')"><span>FORCE MY VALUE</span></div>
+                <div class="button" onclick="tz_alert('auto')"><span>SET AUTOMATICALLY</span></div>
+                <div class="button" onclick="tz_alert()"><span>GO BACK</span></div>
+            </div>
+        </div>
+    </div>
+        `
+        return
+    }
+
+
+    VALID_FOR_EXPORT = []
+    invalid_entries = []
+    ALL_TOKEN_ENTRIES = []
+
+    for (const entry of document.getElementById("ui_tokens").getElementsByClassName("entries")) {
+        // get plain id for easy value grab
+        id = Number(entry.parentElement.id.split("_")[1])
+        entry_out = {}
+        a_out = {}
+        inv = false
+        for (const k of Object.keys(TYPEINFO.totpconfig.entry)) {
+            elem = document.getElementById(`${id}_${k}`)
+            if(!elem){
+                continue
+            }
+            v = elem.value
+            a_out[k] = v || ""
+            if(v===undefined || v===""){
+                invalid_entries.push({
+                    id:id,
+                    reason:`Missing ${LOCALIZATION.totpconf[k]}`
+                })
+                inv = true
+                continue
+            } 
+            entry_out[k] = v
+        }
+        if(JSON.stringify(a_out)==="{}"){
+            continue
+        }
+        ALL_TOKEN_ENTRIES.push(a_out)
+        if(!inv){
+            VALID_FOR_EXPORT.push(entry_out)
+        }
+    }
+
+    showAlert = false
+    if(invalid_entries.length>0){
+        log("Some entries contain invalid or incomplete data", "WARNING")
+        showAlert = true
+    }
+
+    if(VALID_FOR_EXPORT.length===0){
+        log("There are no valid entries to export", "WARNING")
+        showAlert = true
+    }
+
+
+    if(showAlert){
+        //show alert
+        document.getElementById("alert_target").innerHTML = `
+        <div class="alert-areablock">
+        <div id="export_alert" class="alert alert-show">
+            <div class="alert-header"><div class="icon"><img src="./icons/warning.svg"> </div><span>WARNING</span></div>
+            <div class="alert-content">
+                <p>You have provided incomplete token information.</p>
+                <p>Entries valid for export: ${VALID_FOR_EXPORT.length}</p>
+                <p>Invalid entries: ${invalid_entries.length}</p>
+                <p>Check the logs or outlined fields for more info.</p>
+                <p>You can still export the data as-is. However, the app might behave unpredictably and you might loose your data.</p>
+                <p>Are you sure you want to proceed?</p>
+            </div>
+            <div class="alert-buttons">
+                <div class="button btn-danger" onclick="s2Export(ALL_TOKEN_ENTRIES)"><div class="icon"><img src="./icons/file.svg"></div><span>YES, DO AS I SAY</span></div>
+                <div class="button" onclick="hideAlert('export_alert')"><span>NO, GO BACK</span></div>
+            </div>
+        </div>
+    </div>
+        `
+    } else {
+        s2Export(VALID_FOR_EXPORT)
+    }
+    
+
+}
+
+async function hideAlert(id) {
+    if(!document.getElementById(id)){
+        return
+    }
+    document.getElementById(id).classList.remove("alert-show")
+    document.getElementById(id).classList.add("alert-hide")
+    await sleep(800)
+    // clear alerts and bgs
+    document.getElementById("alert_target").innerHTML = ``
+    return
+}
+
+function checkTimezoneOffset() {
+    to = -1 * new Date().getTimezoneOffset()
+    flipper_tz = (to/60).toFixed(5)
+
+    if(to%15!==0){
+        log("Timezone Offset: Your current timezone offset is not supported by the Flipper Application User Interface. Proceed with caution.", "WARNING")
+    }
+
+        
+    header_tz_raw = document.getElementById("Timezone").value
+
+    if(header_tz_raw==""){
+        return {
+            alert: true,
+            set_to:flipper_tz,
+            error: "<p>Timezone Offset: You have not specified your timezone offset.</p><p>Do you want to automatically fill this field in with your current timezone offset taken from your current system time?</p>"
+        }
+    }
+
+    if(Number(header_tz_raw)!==Number(flipper_tz) && !force_user_inputted_tz){
+        return {
+            alert: true,
+            set_to: flipper_tz,
+            error: "<p>Timezone Offset: Your current timezone does not match the one specified in global settings.</p> <p>Do you want to automatically fill this field in with your current timezone offset taken from your current system time?</p>"
+        }
+    }
+
+    return true
+}
+
+async function s2Export(entries) {
+    await hideAlert("export_alert")
+    transitionToScreen(3)
+    export_contents = ""
+    // build header
+    export_contents += Object.keys(TYPEINFO.totpconfig.header).map(e=>`${e}: ${document.getElementById(e).value.trim()}`).join("\n")+"\n"
+    // build entries
+    for (const e of entries) {
+        export_contents += Object.keys(TYPEINFO.totpconfig.entry).map(k=>`${k}: ${e[k]?.trim() || ""}`).join("\n")+"\n"
+    }
+    document.getElementById("file_edit").value = export_contents
+    // console.log(export_contents)
+    return export_contents
+}
+
+async function s3Download() {
+    const file = new File(document.getElementById("file_edit").value.split("/n") || [], 'totp.conf', {
+        type: 'text/plain',
+    })
+      
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(file)
+    
+    link.href = url
+    link.download = file.name
+    document.body.appendChild(link)
+    link.click()
+    
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+}
+
+async function copyToClipboard() {
+    var copyText = document.getElementById("file_edit");
+
+    // Select the text field
+    copyText.select();
+    copyText.setSelectionRange(0, 999999); // For mobile devices
+
+    navigator.clipboard.writeText(copyText.value);
+}
+
+// Custom dropdowns setup
+/* Look for any elements with the class "custom-select": */
+function setDropdowns() {
+    x = document.getElementsByClassName("custom-select");
+    l = x?.length || 0;
+    for (i = 0; i < l; i++) {
+
+        if (x[i].getElementsByClassName("select-selected").length!==0) {
+            // custom select exists, ignore
+            continue
+        }
+        setupCustomSelect(x[i].getElementsByTagName("select")[0], x)
+    }
+}
+setDropdowns()
+
+function setupCustomSelect(selElmnt, x) {
+    // Safeguard if element doesn't exist
+    if(selElmnt===undefined || selElmnt?.length ===undefined){
+        return
+    }
+
+    if(x===undefined){
+        x = document.getElementsByClassName("custom-select")
+    }
+
+    ll = selElmnt.length;
+    /* For each element, create a new DIV that will act as the selected item: */
+    a = document.createElement("DIV");
+    a.setAttribute("class", "select-selected");
+    a.innerHTML = selElmnt.options[selElmnt.selectedIndex].innerHTML;
+    x[i].appendChild(a);
+    /* For each element, create a new DIV that will contain the option list: */
+    b = document.createElement("DIV");
+    b.setAttribute("class", "select-items select-hide");
+    for (j = 0; j < ll; j++) {
+        /* For each option in the original select element,
+        create a new DIV that will act as an option item: */
+        c = document.createElement("DIV");
+        c.innerHTML = selElmnt.options[j].innerHTML;
+        c.setAttribute("onclick", "clickSelectOpt(this)")
+        b.appendChild(c);
+    }
+    x[i].appendChild(b);
+    a.addEventListener("click", function (e) {
+        selBoxClick(e, this)
+    });
+}
+
+function selBoxClick(e, t) {
+    /* When the select box is clicked, close any other select boxes,
+    and open/close the current select box: */
+    e.stopPropagation();
+    closeAllSelect(t);
+    t.nextSibling.classList.toggle("select-hide");
+    t.classList.toggle("select-arrow-active");
+}
+
+function clickSelectOpt(t) {
+    /* When an item is clicked, update the original select box,
+        and the selected item: */
+        var y, i, k, s, h, sl, yl;
+        s = t.parentNode.parentNode.getElementsByTagName("select")[0];
+        sl = s.length;
+        h = t.parentNode.previousSibling;
+        for (i = 0; i < sl; i++) {
+          if (s.options[i].innerHTML == t.innerHTML) {
+            s.selectedIndex = i;
+            h.innerHTML = t.innerHTML;
+            y = t.parentNode.getElementsByClassName("same-as-selected");
+            yl = y.length;
+            for (k = 0; k < yl; k++) {
+              y[k].removeAttribute("class");
+            }
+            t.setAttribute("class", "same-as-selected");
+            break;
+          }
+        }
+        h.click();
+}
+
+function closeAllSelect(elmnt) {
+  /* A function that will close all select boxes in the document,
+  except the current select box: */
+  var x, y, i, xl, yl, arrNo = [];
+  x = document.getElementsByClassName("select-items");
+  y = document.getElementsByClassName("select-selected");
+  xl = x?.length || 0;
+  yl = y?.length || 0;
+  for (i = 0; i < yl; i++) {
+    if (elmnt == y[i]) {
+      arrNo.push(i)
+    } else {
+      y[i].classList.remove("select-arrow-active");
+    }
+  }
+  for (i = 0; i < xl; i++) {
+    if (arrNo.indexOf(i)) {
+      x[i].classList.add("select-hide");
+    }
+  }
+}
+
 
 /* If the user clicks anywhere outside the select box,
 then close all select boxes: */

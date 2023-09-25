@@ -76,17 +76,51 @@
     
             </div>
             <div class="screen screen-disabled" id="screen2">
+                <div class="section-label"><span>Global settings</span></div>
                 <div class="header-info" id="ui_header"></div>
                 <br>
                 <div class="button btn-danger" id="params_toggle" onclick="unlockParams()"><div class="icon"><img src="./icons/unlock.svg"></div><span>UNLOCK SYSTEM PARAMETERS</span></div>
+                <hr>
+                <div class="section-label"><span>Your tokens</span></div>   
                 <div class="token-info" id="ui_tokens">
-                    
+                </div>
+                <div class="bounding-box add-box">
+                    <div class="button" onclick="addTokenBox()">
+                        <div class="icon">
+                            <img src="./icons/add.svg">
+                        </div>
+                        <span>ADD ANOTHER TOKEN</span>
+                    </div>
+                </div>
+                <hr>
+                <div class="button exp" id="btn_try_export" onclick="tryExport()">
+                    <div class="icon">
+                        <img src="./icons/file.svg">
+                    </div>
+                    <span>PROCEED TO EXPORT</span>
                 </div>
             </div>
             <div class="screen screen-disabled" id="screen3">
-                <span>indev 3</span>
+                <div class="section-label"><span>Review the file and download</span></div>
+                <div class="editor">
+                    <textarea id="file_edit" name="file_edit" rows="30"></textarea>
+                </div>
+                <div class="s3-buttons">
+                    <div class="button" onclick="copyToClipboard()">
+                        <div class="icon">
+                            <img src="./icons/file.svg">
+                        </div>
+                        <span>COPY TO CLIPBOARD</span>
+                    </div>
+                    <div class="button" onclick="s3Download()">
+                        <div class="icon">
+                            <img src="./icons/file_download.svg">
+                        </div>
+                        <span>DOWNLOAD</span>
+                    </div>
+                </div>
+                
             </div>
-            
             <div class="ab-scan"></div>
             <div class="ab-grid"></div>
             <div class="ab-bg"></div>
@@ -110,21 +144,6 @@
             </div>
             <div class="log-dropdown log-hide">
                 <div class="log-content" id="log-target">
-                    <div class="log-msg"><p>[RPC] (6) LAST System Set DateTime START</p></div>
-                    <div class="log-msg"><p>[RPC] (6) System Set DateTime SUCCESS</p></div>
-                    <div class="log-msg"><p>[RPC] Stopping RPC session</p></div>
-                    <div class="log-msg"><p>[RPC] (6) LAST System Set DateTime START</p></div>
-                    <div class="log-msg"><p>[RPC] (6) System Set DateTime SUCCESS</p></div>
-                    <div class="log-msg"><p>[RPC] Stopping RPC session</p></div>
-                    <div class="log-msg"><p>[RPC] (6) LAST System Set DateTime START</p></div>
-                    <div class="log-msg"><p>[RPC] (6) System Set DateTime SUCCESS</p></div>
-                    <div class="log-msg"><p>[RPC] Stopping RPC session</p></div>
-                    <div class="log-msg"><p>[RPC] (6) LAST System Set DateTime START</p></div>
-                    <div class="log-msg"><p>[RPC] (6) System Set DateTime SUCCESS</p></div>
-                    <div class="log-msg"><p>[RPC] Stopping RPC session</p></div>
-                    <div class="log-msg"><p>[RPC] (6) LAST System Set DateTime START</p></div>
-                    <div class="log-msg"><p>[RPC] (6) System Set DateTime SUCCESS</p></div>
-                    <div class="log-msg"><p>[RPC] Stopping RPC session</p></div>
                 </div>
             </div>
         </div>
