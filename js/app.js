@@ -508,7 +508,7 @@ async function flipperizeEntries(inp) {
  * @returns {void}
  */
 async function readTotpConfigHeader(file) {
-    let zone = 1
+    let zone = 0
     const reader = new FileReader();
     HEADER = JSON.parse(JSON.stringify(DEFAULTS))
     recordFileState("totp")
