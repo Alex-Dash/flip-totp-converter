@@ -29,7 +29,8 @@
                             <div><span>OR</span></div>
                             <div class="button btn-big" onclick="fileSelector('totp')" ondrop="readTotpFile(event);"
                             ondragleave="toggleFileOver(event, 0, 0)" ondragover="allowDrop(event)" ondragenter="toggleFileOver(event, 1,0);">
-                                <span>SELECT FILE</span>
+                                <div><span>SELECT FILE</span></div>
+                                <input type="file" id="totp_file_target" onchange="fileSelector('totp', true)" name="f1">
                             </div>
                         </div>
                         <div id="drag01" class="drag-screen bounding-box">
@@ -54,7 +55,8 @@
                             <div><span>OR</span></div>
                             <div class="button btn-big" onclick="fileSelector('exports')" ondrop="dropfiles(event);"
                             ondragleave="toggleFileOver(event, 0, 1)" ondragover="allowDrop(event)" ondragenter="toggleFileOver(event, 1, 1);">
-                                <span>SELECT FILES</span>
+                                <div><span>SELECT FILES</span></div>
+                                <input type="file" id="exports_file_target" onchange="fileSelector('exports', true)" name="f1">
                             </div>
                         </div>
                         <div id="drag11" class="drag-screen bounding-box">
@@ -78,8 +80,7 @@
             <div class="screen screen-disabled" id="screen2">
                 <div class="section-label"><span>Global settings</span></div>
                 <div class="header-info" id="ui_header"></div>
-                <br>
-                <div class="button btn-danger" id="params_toggle" onclick="unlockParams()"><div class="icon"><img src="./icons/unlock.svg"></div><span>UNLOCK SYSTEM PARAMETERS</span></div>
+                <div class="button btn-danger" id="params_toggle" onclick="unlockParams()"><div class="icon"><img src="./icons/unlock.svg"></div><div><span>UNLOCK SYSTEM PARAMETERS</span></div></div>
                 <hr>
                 <div class="section-label"><span>Your tokens</span></div>   
                 <div class="token-info" id="ui_tokens">
@@ -89,7 +90,9 @@
                         <div class="icon">
                             <img src="./icons/add.svg">
                         </div>
-                        <span>ADD ANOTHER TOKEN</span>
+                        <div>
+                            <span>ADD ANOTHER TOKEN</span>
+                        </div>
                     </div>
                 </div>
                 <hr>
@@ -97,7 +100,9 @@
                     <div class="icon">
                         <img src="./icons/file.svg">
                     </div>
-                    <span>PROCEED TO EXPORT</span>
+                    <div>
+                        <span>PROCEED TO EXPORT</span>
+                    </div>
                 </div>
             </div>
             <div class="screen screen-disabled" id="screen3">
@@ -110,13 +115,17 @@
                         <div class="icon">
                             <img src="./icons/file.svg">
                         </div>
-                        <span>COPY TO CLIPBOARD</span>
+                        <div>
+                            <span>COPY TO CLIPBOARD</span>
+                        </div>
                     </div>
                     <div class="button" onclick="s3Download()">
                         <div class="icon">
                             <img src="./icons/file_download.svg">
                         </div>
-                        <span>DOWNLOAD</span>
+                        <div>
+                            <span>DOWNLOAD</span>
+                        </div>
                     </div>
                 </div>
                 
@@ -131,7 +140,9 @@
                     <div id="log_icon" class="icon icon-normal icon-flip">
                         <img src="./icons/arrow.svg">
                     </div>
-                    <span>LOGS</span>
+                    <div>
+                        <span>LOGS</span>
+                    </div>
                 </div>
                 <div class="log-status">
                     <div class="icon icon-normal">

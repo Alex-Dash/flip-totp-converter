@@ -38,6 +38,11 @@
     --tc-warning:#ff5924;
     --tc-green-main:#2ed832;
     --tc-green-alpha:#2ed83145;
+    scrollbar-color: rgba(var(--tc-r), var(--tc-g), var(--tc-b), 1 ) rgba(var(--tc-r), var(--tc-g), var(--tc-b), 0.4 ); /*Moz fix*/
+}
+
+input[type=file]{
+    display: none;
 }
 
 /* width */
@@ -213,7 +218,6 @@ a{
     justify-content: center;
     align-content: center;
     flex-wrap: wrap;
-    padding-top: 1em;
 }
 
 .file-row>div{
@@ -320,8 +324,20 @@ a{
     /* color: var(--btn-hover-text-color); */
 }
 
-.button>span{
+.button span{
     pointer-events: none;
+}
+
+/* Moz fix */
+.button>div{
+    display: flex;
+    align-content: center;
+    align-items: center;
+    height: 0.703em;
+}
+
+#params_toggle{
+    margin-top:0.3em;
 }
 
 .btn-big{
@@ -540,6 +556,9 @@ hr{
     cursor: pointer;
     border-radius: 0.2em;
     z-index: 1200;
+    height: 0.703em;
+    display: flex;
+    align-items: center;
 }
 
 /* Changes lower half of the border and straightens bottom corners when select is activated */
@@ -585,8 +604,14 @@ hr{
     width: 9em;
 }
 
+.entry-label{
+    height:0.703em; /*Moz fix*/
+    display: flex;
+    align-items: center;
+}
+
 .entry-short .custom-select{
-    width: 3em;
+    width: 4em;
 }
 
 /* Default input styling */
@@ -594,6 +619,7 @@ hr{
 input{
     font-family: Haxcorp;
     font-size: 0.8em;
+    height: 0.703em; /*Moz fix*/
     background: var(--btn-main-bg);
     color: rgb(var(--tc-r), var(--tc-g), var(--tc-b));
     border: solid rgb(var(--tc-r), var(--tc-g), var(--tc-b)) 0.06em;
@@ -608,6 +634,7 @@ input{
 
 input[type=number]{
     width: 3em;
+    -moz-appearance: textfield;
 }
 
 input[type=number]::-webkit-inner-spin-button, 

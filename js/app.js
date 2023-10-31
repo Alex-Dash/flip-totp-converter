@@ -219,6 +219,13 @@ var invalid_entries = []
 
 var force_user_inputted_tz = false
 
+/**
+ * Helper function to trim strings to a set size, keeping the beginning and the end
+ * @param {String} string Input string
+ * @param {Number} start Symbols from start
+ * @param {Number} end Symbols from end
+ * @returns {String} Result string
+ */
 function shorten(string, start, end) {
     if(start+end+3>=string.length){
         return string
@@ -226,7 +233,13 @@ function shorten(string, start, end) {
     return string.slice(0,start)+"..."+string.slice(-end)
 }
 
+/**
+ * Function that initiates loading and parsing 
+ * @param {FileList} list Files selected
+ * @returns {void}
+ */
 async function parseFileList(list) {
+    let zone = 1
     recordFileState("exports")
     TOKEN_ENTRIES = []
     progress = document.getElementById(`drag${zone}2`)
@@ -251,12 +264,24 @@ async function parseFileList(list) {
     progress.style.display = 'flex'
 }
 
-function log(msg, type, context) {
+/**
+ * Populates UI log and console output
+ * @param {String} msg
+ * @param {String} type
+ * @returns {void}
+ */
+function log(msg, type) {
     console.log(msg)
     document.getElementById("log-target").innerHTML = `<div class="log-msg"><p>[${type===undefined?"INFO":type.toUpperCase()}] ${msg}</p></div>
 ${document.getElementById("log-target").innerHTML}`
 }
 
+/**
+ * Shows error message on file selectors
+ * @param {String} message Message to display
+ * @param {Number} zone Zone identifier, starting at 0
+ * @returns {void}
+ */
 function loaderError(message, zone) {
     document.getElementById(`drag${zone}0`).style.display = 'none'
     document.getElementById(`drag${zone}1`).style.display = 'none'
@@ -265,7 +290,13 @@ function loaderError(message, zone) {
     progress.style.display = 'flex'
 }
 
-async function readFileAsync(file, context) {
+/**
+ * File reader for Authenticator exports
+ * Shows an error or populates the global var with results
+ * @param {File} file
+ * @returns {void}
+ */
+async function readFileAsync(file) {
     const reader = new FileReader();
     reader.addEventListener('load', (event) => {
         extractDataRaw(event?.target?.result, file).then(
@@ -277,7 +308,6 @@ async function readFileAsync(file, context) {
                 }
                 flipperizeEntries(r).then(x=>{
                     TOKEN_ENTRIES.push(x?.data || [])
-                    console.log(x)
                 })
             }
             )
@@ -285,6 +315,11 @@ async function readFileAsync(file, context) {
     reader.readAsText(file);
 }
 
+/**
+ * Guesses file format based on contents
+ * @param {String} content File contents
+ * @returns {String} Guessed type
+ */
 function getFileType(content) {
     try {
         JSONcontents = JSON.parse(content)
@@ -304,6 +339,12 @@ function getFileType(content) {
     return "invalid"
 }
 
+/**
+ * Keeps track of loaded files
+ * @param {String} type File identifier (if it is a totp or authenticator export)
+ * @param {File} file_ref File reference
+ * @returns {Boolean} True if the file was registered
+ */
 async function recordFileState(type, file_ref) {
     p = await new Promise((rs,rj)=>{
         if(type===undefined){
@@ -334,6 +375,12 @@ async function recordFileState(type, file_ref) {
     return p
 }
 
+/**
+ * Parses authenticator exports to a standard format
+ * @param {String} content File contents
+ * @param {File} file_ref File reference
+ * @returns {Object} Standardized file contents or error
+ */
 async function extractDataRaw(content, file_ref) {
     ftype = getFileType(content)
     switch (ftype) {
@@ -417,6 +464,11 @@ async function extractDataRaw(content, file_ref) {
     }
 }
 
+/**
+ * Second stage of parsing authenticator files and plaintext flipper export
+ * @param {Object} inp Input from extractDataRaw()
+ * @returns {Object} Object with plaintext version and object version
+ */
 async function flipperizeEntries(inp) {
     if(inp.isEncrypted){
         return {
@@ -450,7 +502,13 @@ async function flipperizeEntries(inp) {
     return {plain:acc, data:data}
 }
 
+/**
+ * Checks the validity of totp.conf header
+ * @param {File} file File reference
+ * @returns {void}
+ */
 async function readTotpConfigHeader(file) {
+    let zone = 1
     const reader = new FileReader();
     HEADER = JSON.parse(JSON.stringify(DEFAULTS))
     recordFileState("totp")
@@ -488,6 +546,11 @@ async function readTotpConfigHeader(file) {
     reader.readAsText(file);
 }
 
+/**
+ * File drag-and-drop handle for totp.conf
+ * @param {MouseEvent} event
+ * @returns {void}
+ */
 async function readTotpFile(event) {
     event.preventDefault()
     if (event.dataTransfer.items) {
@@ -523,6 +586,13 @@ async function readTotpFile(event) {
     
 }
 
+/**
+ * Switches button screens on file drop
+ * @param {MouseEvent} event
+ * @param {Number} state 1 on enter, 0 otherwise
+ * @param {Number} context Context for drop-zone guess (0 or 1)
+ * @returns {any}
+ */
 async function toggleFileOver(event, state, context) {
     event.preventDefault()
 
@@ -536,7 +606,6 @@ async function toggleFileOver(event, state, context) {
         document.getElementById(`drag${zone}0`).style.display = 'none'
         document.getElementById(`drag${zone}1`).style.display = 'flex'
         document.getElementById(`drag${zone}2`).style.display = 'none'
-        // console.log(document.getElementById(`drag${zone}0`).style.display = 'none')
     } else {
         document.getElementById(`drag${zone}0`).style.display = 'flex'
         document.getElementById(`drag${zone}1`).style.display = 'none'
@@ -544,14 +613,34 @@ async function toggleFileOver(event, state, context) {
     }
 }
 
-async function fileSelector(variant) {
+/**
+ * Opens file selector and initiates processing of files
+ * @param {String} variant "totp" or "exports" for each file selector present
+ * @param {any} change=false True if the call came from the vanilla selector
+ * @returns {void}
+ */
+async function fileSelector(variant, change=false) {
+    let fp = window.showOpenFilePicker
+    let def_fp = document.getElementById(`${variant}_file_target`)
     try {
         switch (variant) {
             case 'totp':
-                x = await showOpenFilePicker({
-                    multiple:false
-                })
-                l = x.map(e=>e.getFile())
+                if(fp){
+                    x = await showOpenFilePicker({
+                        multiple:false
+                    })
+                    l = x.map(e=>e.getFile())
+                } else {
+                    if(change){
+                        // File has been selected
+                        l = def_fp.files
+                    } else {
+                        // open default file picker
+                        def_fp.click()
+                        return
+                    }
+                }
+                
                 if(l?.length>0){
                     readTotpConfigHeader((await Promise.all(l))[0])
                 } else {
@@ -559,10 +648,21 @@ async function fileSelector(variant) {
                 }
                 break;
             case 'exports':
-                x = await showOpenFilePicker({
-                    multiple:true
-                })
-                l = x.map(e=>e.getFile())
+                if(fp){
+                    x = await showOpenFilePicker({
+                        multiple:true
+                    })
+                    l = x.map(e=>e.getFile())
+                } else {
+                    if(change){
+                        // File has been selected
+                        l = def_fp.files
+                    } else {
+                        // open default file picker
+                        def_fp.click()
+                        return
+                    }
+                }
                 if(l?.length>0){
                     parseFileList(await Promise.all(l))
                 } else {
@@ -575,14 +675,25 @@ async function fileSelector(variant) {
         }
     } catch (error) {
         // filepick failed
+        log(`Failed to open file picker: ${error}`, "error")
     }
     
 }
 
+/**
+ * Prevents opening the file on drop
+ * @param {MouseEvent} event
+ * @returns {void}
+ */
 async function allowDrop(event) {
     event.preventDefault()
 }
 
+/**
+ * Initiates parsing of authenticator files on drop
+ * @param {MouseEvent} event
+ * @returns {void}
+ */
 async function dropfiles(event) {
     
     event.preventDefault()
@@ -603,12 +714,19 @@ async function dropfiles(event) {
       }
 }
 
+/**
+ * Toggles the log dropdown
+ * @returns {void}
+ */
 async function toggleLogs() {
     document.getElementsByClassName("log-dropdown")[0].classList.toggle("log-hide")
     document.getElementById("log_icon").classList.toggle("icon-flip")
 }
 
-// Show screen 1 continue button only when at least one file for each file group was loaded
+/**
+ * Show screen 1 continue button only when at least one file for each file group was loaded
+ * @returns {void}
+ */
 async function s1ButtonCheck() {
     file_groups = Object.keys(FILE_STATE)
     if(file_groups.reduce((a,e)=>{return a+(FILE_STATE[e].length>0?1:0)},0)===file_groups.length){
@@ -620,6 +738,10 @@ async function s1ButtonCheck() {
     }
 }
 
+/**
+ * Sequence for the screen 1 "Continue" button
+ * @returns {void}
+ */
 async function s1ButtonContinue() {
     transitionToScreen(2);
     updateHeaderUI(HEADER);
@@ -627,6 +749,11 @@ async function s1ButtonContinue() {
     updateTokensUI(TOKEN_ENTRIES);
 }
 
+/**
+ * Transitions to selected screen
+ * @param {Number} screen_id
+ * @returns {void}
+ */
 async function transitionToScreen(screen_id) {
     screens = [1,2,3]
     for (const sc_id of screens) {
@@ -646,6 +773,16 @@ async function transitionToScreen(screen_id) {
 
 }
 
+/**
+ * Generates editable element with selected options
+ * @param {String} id HTML element id
+ * @param {String} type Type of the supplied value (number, float, int, string, etc...)
+ * @param {Boolean} isProtected True for system settings
+ * @param {any} value Initial value
+ * @param {any} default_value Default value
+ * @param {Array} set Possible options for dropdowns
+ * @returns {String} String HTML
+ */
 function generateInput(id, type, isProtected, value, default_value, set) {
     if(set!==undefined){
         // generate select
@@ -668,6 +805,11 @@ function generateInput(id, type, isProtected, value, default_value, set) {
     }
 }
 
+/**
+ * Sets UI with supplied header parameters
+ * @param {Object} h Header Object
+ * @returns {void}
+ */
 function updateHeaderUI(h) {
     entries = []
     ids = []
@@ -693,6 +835,12 @@ function updateHeaderUI(h) {
     setDropdowns()
 }
 
+/**
+ * Handles the "Unlock system parameters" button logic on screen 2
+ * @param {Boolean} state If false, the alert would be shown first
+ * @param {Boolean} back True if back button was clicked within the alert
+ * @returns {void}
+ */
 async function unlockParams(state, back) {
     b = document.getElementById("params_toggle")
     switch (state) {
@@ -773,8 +921,8 @@ async function unlockParams(state, back) {
                     <p>Are you sure you want to proceed?</p>
                 </div>
                 <div class="alert-buttons">
-                    <div class="button btn-danger" onclick="unlockParams(true)"><div class="icon"><img src="./icons/unlock.svg"></div><span>YES, DO AS I SAY</span></div>
-                    <div class="button" onclick="unlockParams(false, true)"><span>NO, GO BACK</span></div>
+                    <div class="button btn-danger" onclick="unlockParams(true)"><div class="icon"><img src="./icons/unlock.svg"></div><div><span>YES, DO AS I SAY</span></div></div>
+                    <div class="button" onclick="unlockParams(false, true)"><div><span>NO, GO BACK</span></div></div>
                 </div>
             </div>
         </div>
@@ -785,6 +933,11 @@ async function unlockParams(state, back) {
 }
 
 
+/**
+ * Generates user-editable token entries and adds them to the UI
+ * @param {Array} tokens Array (*of arrays) of parsed tokens
+ * @returns {void}
+ */
 function updateTokensUI(tokens) {
     tokens_flat = tokens.flat()
     targ = document.getElementById("ui_tokens")
@@ -798,6 +951,12 @@ function updateTokensUI(tokens) {
     setDropdowns()
 }
 
+/**
+ * Generates HTML for token entry
+ * @param {Object} data Parsed and formatted token object
+ * @param {Number} token_id Token positional id
+ * @returns {String} Generated HTML string
+ */
 function genTokenEntry(data, token_id) {
     // @TODO: simplify this mess
     return `<div class="bounding-box" id="eid_${token_id}">
@@ -850,6 +1009,10 @@ function genTokenEntry(data, token_id) {
 
 }
 
+/**
+ * Gets last valid entry element ID
+ * @returns {Number} element ID
+ */
 function getLastValidEID() {
     a = [...document.getElementsByClassName("entries")].map(e=>e?.parentElement?.id).sort()
     if(a.length===0){
@@ -859,6 +1022,12 @@ function getLastValidEID() {
     }
 }
 
+/**
+ * Moves token entry in the specified direction
+ * @param {Number} id Token eid
+ * @param {Number} dir direction offset
+ * @returns {void}
+ */
 function moveBox(id, dir) {
     dom_arr = document.getElementById("ui_tokens").children
     boundary = dom_arr.length -1
@@ -892,6 +1061,10 @@ function moveBox(id, dir) {
     
 }
 
+/**
+ * Handles the "Add new token" button on screen 2
+ * @returns {void}
+ */
 function addTokenBox() {
     l = document.getElementById("ui_tokens")
     var child = document.createElement('div');
@@ -908,10 +1081,20 @@ function addTokenBox() {
     setDropdowns()
 }
 
+/**
+ * Removes entry from list
+ * @param {HTMLElement} t HTML element to be removed
+ * @returns {void}
+ */
 function deleteEntry(t) {
     t.parentElement.parentElement.remove()
 }
 
+/**
+ * Handles the timezone alert buttons
+ * @param {String} param "force" "auto" or undefined for which action should be taken
+ * @returns {void}
+ */
 async function tz_alert(param) {
     switch (param) {
         case "force":
@@ -930,6 +1113,11 @@ async function tz_alert(param) {
     return
 }
 
+/**
+ * Forces the export for incomplete data entries
+ * @param {Boolean} forceExport
+ * @returns {void}
+ */
 async function export_alert(forceExport) {
     // close alert
     await hideAlert("export_alert")
@@ -940,6 +1128,10 @@ async function export_alert(forceExport) {
     return
 }
 
+/**
+ * Check all data entries and show alerts if needed
+ * @returns {void}
+ */
 async function tryExport() {
 
     // check header, only time as unlocking the parameters has its own warning
@@ -954,9 +1146,9 @@ async function tryExport() {
                 ${tz.error}
             </div>
             <div class="alert-buttons">
-                <div class="button btn-danger" onclick="tz_alert('force')"><span>FORCE MY VALUE</span></div>
-                <div class="button" onclick="tz_alert('auto')"><span>SET AUTOMATICALLY</span></div>
-                <div class="button" onclick="tz_alert()"><span>GO BACK</span></div>
+                <div class="button btn-danger" onclick="tz_alert('force')"><div><span>FORCE MY VALUE</span></div></div>
+                <div class="button" onclick="tz_alert('auto')"><div><span>SET AUTOMATICALLY</span></div></div>
+                <div class="button" onclick="tz_alert()"><div><span>GO BACK</span></div></div>
             </div>
         </div>
     </div>
@@ -1041,6 +1233,11 @@ async function tryExport() {
 
 }
 
+/**
+ * Hides alert by id
+ * @param {String} id Alert HTML id
+ * @returns {void}
+ */
 async function hideAlert(id) {
     if(!document.getElementById(id)){
         return
@@ -1053,6 +1250,10 @@ async function hideAlert(id) {
     return
 }
 
+/**
+ * Checks user timezone data against browser time
+ * @returns {Boolean|Object} Timezone data and possible valid timezone suggestion
+ */
 function checkTimezoneOffset() {
     to = -1 * new Date().getTimezoneOffset()
     flipper_tz = (to/60).toFixed(5)
@@ -1083,6 +1284,11 @@ function checkTimezoneOffset() {
     return true
 }
 
+/**
+ * Builds the contents of the final export file
+ * @param {Array} entries token entries
+ * @returns {String} File contents
+ */
 async function s2Export(entries) {
     await hideAlert("export_alert")
     transitionToScreen(3)
@@ -1098,6 +1304,10 @@ async function s2Export(entries) {
     return export_contents
 }
 
+/**
+ * Builds and downloads the export file
+ * @returns {void}
+ */
 async function s3Download() {
     const file = new File(document.getElementById("file_edit").value.split("/n") || [], 'totp.conf', {
         type: 'text/plain',
@@ -1115,6 +1325,10 @@ async function s3Download() {
     window.URL.revokeObjectURL(url)
 }
 
+/**
+ * Copies export contents to clipboard
+ * @returns {void}
+ */
 async function copyToClipboard() {
     var copyText = document.getElementById("file_edit");
 
@@ -1125,8 +1339,10 @@ async function copyToClipboard() {
     navigator.clipboard.writeText(copyText.value);
 }
 
-// Custom dropdowns setup
-/* Look for any elements with the class "custom-select": */
+/**
+ * Initiates building of custom dropdowns from the vanilla ones
+ * @returns {void}
+ */
 function setDropdowns() {
     x = document.getElementsByClassName("custom-select");
     l = x?.length || 0;
